@@ -1,0 +1,31 @@
+# Lit le calendrier Google FRF Cyclo toutes les heures et met à jour data/sorties.json.
+# Si le fichier change, il est enregistré dans le dépôt et le site en ligne se met à jour.
+name: Mise à jour du calendrier des sorties
+
+on:
+  schedule:
+    - cron: "17 * * * *"   # toutes les heures, à la 17e minute
+  workflow_dispatch:         # bouton « Run workflow » pour lancer une mise à jour à la main
+
+permissions:
+  contents: write
+
+jobs:
+  maj:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r tools/requirements.txt
+      - run: python tools/maj_calendrier.py
+      - name: Enregistrer le calendrier s'il a changé
+        run: |
+          if [ -n "$(git status --porcelain data/sorties.json)" ]; then
+            git config user.name "maj-calendrier"
+            git config user.email "maj-calendrier@users.noreply.github.com"
+            git add data/sorties.json
+            git commit -m "Calendrier des sorties mis à jour"
+            git push
+          fi
