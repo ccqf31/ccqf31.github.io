@@ -182,8 +182,11 @@ def main():
     print(f"Site assemblé, version {VERSION} : index.html ({len(page.encode()) // 1024} Ko), "
           f"{len(photos)} photo(s), manifest.webmanifest, sw.js")
     if args.apercu:
-        integrees = [dict(p, m="data:image/jpeg;base64," + b64(PHOTOS_WEB / "mini" / p["f"]),
-                          u="data:image/jpeg;base64," + b64(PHOTOS_WEB / p["f"])) for p in photos]
+        # Seules les vignettes sont intégrées, aussi pour l'agrandissement : la copie reste légère
+        integrees = []
+        for p in photos:
+            mini = "data:image/jpeg;base64," + b64(PHOTOS_WEB / "mini" / p["f"])
+            integrees.append(dict(p, m=mini, u=mini, w=p["mw"], h=p["mh"]))
         apercu = assembler(integrees)
         Path(args.apercu).write_text(apercu, encoding="utf-8")
         print(f"Aperçu autonome : {args.apercu} ({len(apercu.encode()) // 1024} Ko)")

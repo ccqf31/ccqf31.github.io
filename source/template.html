@@ -1661,7 +1661,7 @@ html.locked{overflow:hidden}
     if(!PHOTOS.length){document.getElementById("gallery-empty").hidden=false;return;}
     gal.innerHTML=PHOTOS.map(function(p,i){
       return '<button type="button" class="ph" data-i="'+i+'" aria-label="Agrandir la photo'+(p.l?' : '+esc(p.l):' '+(i+1))+'">'+
-        '<img src="'+esc(p.m)+'" alt="'+esc(p.l||"")+'" width="'+p.mw+'" height="'+p.mh+'" loading="lazy" decoding="async"></button>';
+        '<img src="'+esc(p.m)+'" alt="'+esc(p.l||"")+'" width="'+p.mw+'" height="'+p.mh+'"'+(p.m.indexOf("data:")===0?'':' loading="lazy"')+' decoding="async"></button>';
     }).join("");
     function show(i){
       cur=(i+PHOTOS.length)%PHOTOS.length;
