@@ -761,7 +761,7 @@ img{max-width:100%}
           <p class="sec-sub">Les sorties, les escapades et les rendez-vous de la saison.</p>
         </div>
       </div>
-      <div class="gallery" id="gallery"></div>
+      <div class="gallery" id="gallery"><button type="button" class="ph" data-i="0" aria-label="Agrandir la photo 1"><img src="photos/mini/01-groupe-cypres.jpg" alt="" width="640" height="360" loading="lazy" decoding="async"></button><button type="button" class="ph" data-i="1" aria-label="Agrandir la photo 2"><img src="photos/mini/02-groupe-cypres-large.jpg" alt="" width="640" height="360" loading="lazy" decoding="async"></button><button type="button" class="ph" data-i="2" aria-label="Agrandir la photo 3"><img src="photos/mini/03-belvedere.jpg" alt="" width="640" height="288" loading="lazy" decoding="async"></button><button type="button" class="ph" data-i="3" aria-label="Agrandir la photo 4"><img src="photos/mini/04-depart.jpg" alt="" width="640" height="480" loading="lazy" decoding="async"></button></div>
       <div class="gallery-empty" id="gallery-empty" hidden>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
         <p><b>Les premières photos arrivent bientôt.</b><span>Vous avez des photos des sorties ? Envoyez-les à frfcyclo@gmail.com.</span></p>
@@ -1672,19 +1672,17 @@ img{max-width:100%}
 
   /* ---------- Photos du club : galerie et agrandissement ---------- */
   /* Liste produite par source/build.py à partir du dossier source/photos/ */
-  var PHOTOS=[{"f": "01-groupe-cypres.jpg", "w": 1600, "h": 900, "mw": 640, "mh": 360, "l": "", "m": "photos/mini/01-groupe-cypres.jpg", "u": "photos/01-groupe-cypres.jpg"}, {"f": "02-groupe-cypres-large.jpg", "w": 1600, "h": 900, "mw": 640, "mh": 360, "l": "", "m": "photos/mini/02-groupe-cypres-large.jpg", "u": "photos/02-groupe-cypres-large.jpg"}, {"f": "03-belvedere.jpg", "w": 1600, "h": 721, "mw": 640, "mh": 288, "l": "", "m": "photos/mini/03-belvedere.jpg", "u": "photos/03-belvedere.jpg"}, {"f": "04-depart.jpg", "w": 1000, "h": 750, "mw": 640, "mh": 480, "l": "", "m": "photos/mini/04-depart.jpg", "u": "photos/04-depart.jpg"}];
+  var PHOTOS=[{"w": 1600, "h": 900, "l": "", "u": "photos/01-groupe-cypres.jpg"}, {"w": 1600, "h": 900, "l": "", "u": "photos/02-groupe-cypres-large.jpg"}, {"w": 1600, "h": 721, "l": "", "u": "photos/03-belvedere.jpg"}, {"w": 1000, "h": 750, "l": "", "u": "photos/04-depart.jpg"}];
   (function(){
     var gal=document.getElementById("gallery"),lb=document.getElementById("lb"),img=document.getElementById("lb-img");
     var cap=document.getElementById("lb-cap"),count=document.getElementById("lb-count"),cur=0,opener=null,x0=null;
-    if(!PHOTOS.length){document.getElementById("gallery-empty").hidden=false;return;}
-    gal.innerHTML=PHOTOS.map(function(p,i){
-      return '<button type="button" class="ph" data-i="'+i+'" aria-label="Agrandir la photo'+(p.l?' : '+esc(p.l):' '+(i+1))+'">'+
-        '<img src="'+esc(p.m)+'" alt="'+esc(p.l||"")+'" width="'+p.mw+'" height="'+p.mh+'"'+(p.m.indexOf("data:")===0?'':' loading="lazy"')+' decoding="async"></button>';
-    }).join("");
+    /* Les vignettes sont écrites dans la page au moment de l'assemblage (source/build.py) */
+    var thumbs=gal.querySelectorAll(".ph img");
+    if(!thumbs.length){document.getElementById("gallery-empty").hidden=false;return;}
     function show(i){
       cur=(i+PHOTOS.length)%PHOTOS.length;
       var p=PHOTOS[cur];
-      img.src=p.u;img.alt=p.l||"";img.width=p.w;img.height=p.h;
+      img.src=p.u||thumbs[cur].currentSrc||thumbs[cur].src;img.alt=p.l||"";img.width=p.w;img.height=p.h;
       cap.textContent=p.l||"";
       count.textContent=(cur+1)+" / "+PHOTOS.length;
     }

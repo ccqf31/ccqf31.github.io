@@ -11,6 +11,7 @@ y est aussi intégré, en secours : au chargement, la page relit data/sorties.js
 """
 import argparse
 import base64
+import html
 import json
 import re
 from pathlib import Path
@@ -66,6 +67,17 @@ def preparer_photos():
         if ancien.name not in publies:          # photo retirée de source/photos/
             ancien.unlink()
     return liste
+
+
+def galerie_html(photos, differe):
+    """Vignettes de la galerie, écrites directement dans la page comme le logo et le maillot."""
+    vignettes, chargement = [], ' loading="lazy"' if differe else ""
+    for i, p in enumerate(photos):
+        etiquette = f"Agrandir la photo : {p['l']}" if p["l"] else f"Agrandir la photo {i + 1}"
+        vignettes.append(f'<button type="button" class="ph" data-i="{i}" aria-label="{html.escape(etiquette)}">'
+                         f'<img src="{html.escape(p["m"])}" alt="{html.escape(p["l"])}" width="{p["mw"]}" height="{p["mh"]}"'
+                         f'{chargement} decoding="async"></button>')
+    return "".join(vignettes)
 
 
 def logo_svg(nom):
@@ -143,7 +155,7 @@ self.addEventListener("fetch", (event) => {
 """
 
 
-def assembler(photos):
+def assembler(photos, differe=True):
     modele = (SOURCE / "template.html").read_text(encoding="utf-8")
     donnees = json.loads((RACINE / "data" / "sorties.json").read_text(encoding="utf-8"))
     donnees_js = json.dumps(donnees, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
@@ -151,7 +163,9 @@ def assembler(photos):
                    .replace("__MAILLOT__", b64(ASSETS / "maillot-ccqf.jpg"))
                    .replace("__ICON__", b64(RACINE / "icons" / "icon-192.png"))
                    .replace("__DATA__", donnees_js)
-                   .replace("__PHOTOS__", json.dumps(photos, ensure_ascii=False).replace("<", "\\u003c"))
+                   .replace("__GALERIE__", galerie_html(photos, differe))
+                   .replace("__PHOTOS__", json.dumps([{k: v for k, v in p.items() if k in ("w", "h", "l", "u")} for p in photos],
+                                                     ensure_ascii=False).replace("<", "\\u003c"))
                    .replace("__VERSION__", VERSION).replace("__DATE__", DATE)
                    .replace("__ANDROID__", logo_svg("android")).replace("__APPLE__", logo_svg("apple")))
     reste = re.findall(r"__[A-Z]+__", re.sub(r"data:[^\"]+", "", corps))
@@ -182,12 +196,10 @@ def main():
     print(f"Site assemblé, version {VERSION} : index.html ({len(page.encode()) // 1024} Ko), "
           f"{len(photos)} photo(s), manifest.webmanifest, sw.js")
     if args.apercu:
-        # Seules les vignettes sont intégrées, aussi pour l'agrandissement : la copie reste légère
-        integrees = []
-        for p in photos:
-            mini = "data:image/jpeg;base64," + b64(PHOTOS_WEB / "mini" / p["f"])
-            integrees.append(dict(p, m=mini, u=mini, w=p["mw"], h=p["mh"]))
-        apercu = assembler(integrees)
+        # Seules les vignettes sont intégrées : l'agrandissement reprend la vignette, la copie reste légère
+        integrees = [dict(p, m="data:image/jpeg;base64," + b64(PHOTOS_WEB / "mini" / p["f"]), w=p["mw"], h=p["mh"])
+                     for p in photos]
+        apercu = assembler(integrees, differe=False)
         Path(args.apercu).write_text(apercu, encoding="utf-8")
         print(f"Aperçu autonome : {args.apercu} ({len(apercu.encode()) // 1024} Ko)")
 

@@ -743,7 +743,7 @@ html.locked{overflow:hidden}
           <p class="sec-sub">Les sorties, les escapades et les rendez-vous de la saison.</p>
         </div>
       </div>
-      <div class="gallery" id="gallery"></div>
+      <div class="gallery" id="gallery">__GALERIE__</div>
       <div class="gallery-empty" id="gallery-empty" hidden>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
         <p><b>Les premières photos arrivent bientôt.</b><span>Vous avez des photos des sorties ? Envoyez-les à frfcyclo@gmail.com.</span></p>
@@ -1658,15 +1658,13 @@ html.locked{overflow:hidden}
   (function(){
     var gal=document.getElementById("gallery"),lb=document.getElementById("lb"),img=document.getElementById("lb-img");
     var cap=document.getElementById("lb-cap"),count=document.getElementById("lb-count"),cur=0,opener=null,x0=null;
-    if(!PHOTOS.length){document.getElementById("gallery-empty").hidden=false;return;}
-    gal.innerHTML=PHOTOS.map(function(p,i){
-      return '<button type="button" class="ph" data-i="'+i+'" aria-label="Agrandir la photo'+(p.l?' : '+esc(p.l):' '+(i+1))+'">'+
-        '<img src="'+esc(p.m)+'" alt="'+esc(p.l||"")+'" width="'+p.mw+'" height="'+p.mh+'"'+(p.m.indexOf("data:")===0?'':' loading="lazy"')+' decoding="async"></button>';
-    }).join("");
+    /* Les vignettes sont écrites dans la page au moment de l'assemblage (source/build.py) */
+    var thumbs=gal.querySelectorAll(".ph img");
+    if(!thumbs.length){document.getElementById("gallery-empty").hidden=false;return;}
     function show(i){
       cur=(i+PHOTOS.length)%PHOTOS.length;
       var p=PHOTOS[cur];
-      img.src=p.u;img.alt=p.l||"";img.width=p.w;img.height=p.h;
+      img.src=p.u||thumbs[cur].currentSrc||thumbs[cur].src;img.alt=p.l||"";img.width=p.w;img.height=p.h;
       cap.textContent=p.l||"";
       count.textContent=(cur+1)+" / "+PHOTOS.length;
     }
