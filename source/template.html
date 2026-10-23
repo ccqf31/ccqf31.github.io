@@ -82,6 +82,7 @@ a{color:inherit}
 .nav{display:flex;gap:.15rem}
 .nav a{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:1rem;text-decoration:none;padding:.4rem .7rem;border-radius:4px;color:var(--on-vert);white-space:nowrap}
 @media (hover:hover){.nav a:hover{background:var(--vert-line)}}
+@media (max-width:1400px){.nav a{padding:.4rem .5rem;letter-spacing:.045em}}
 .menu-btn{display:none;align-items:center;gap:.5rem;min-height:44px;font:700 1rem var(--display);text-transform:uppercase;letter-spacing:.06em;color:var(--on-vert);background:transparent;border:1px solid var(--vert-line);border-radius:4px;padding:.45rem .9rem;cursor:pointer;flex:none}
 .menu-btn i{display:block;width:16px;height:2px;background:currentColor;box-shadow:0 5px 0 currentColor,0 -5px 0 currentColor}
 @media (max-width:1200px){
@@ -456,6 +457,30 @@ html.locked{overflow:hidden}
 .version{font-family:var(--mono);font-size:.78rem;letter-spacing:.06em;color:var(--muted);text-align:center;padding-top:1.25rem;border-top:1px solid var(--line)}
 .foot .attrib{flex-basis:100%;font-size:.75rem}
 
+/* Photos du club : galerie et agrandissement */
+/* Grille régulière de cases 16/9 ; chaque photo y tient entière (aucun cycliste coupé) */
+.gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
+@media (max-width:620px){.gallery{gap:.5rem}}
+.ph{display:block;padding:0;border:0;border-radius:8px;overflow:hidden;background:var(--line);cursor:zoom-in;aspect-ratio:16/9;max-width:100%}
+.ph img{display:block;width:100%;height:100%;object-fit:contain;transition:transform .25s}
+@media (hover:hover){.ph:hover img{transform:scale(1.04)}}
+@media (prefers-reduced-motion: reduce){.ph img{transition:none}}
+.gallery-empty{display:flex;align-items:center;gap:1.1rem;padding:1.4rem 1.5rem;border:2px dashed var(--line);border-radius:12px;background:var(--surface);max-width:44rem}
+.gallery-empty svg{width:44px;height:44px;flex:none;fill:none;stroke:var(--vert-text);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.gallery-empty p{display:flex;flex-direction:column;gap:.2rem}
+.gallery-empty span{color:var(--muted)}
+.lb{position:fixed;inset:0;z-index:45;background:rgba(5,12,9,.94);display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:minmax(0,1fr) auto;align-items:center;gap:.5rem;padding:calc(56px + env(safe-area-inset-top,0px)) max(8px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+.lb-fig{grid-column:2;grid-row:1;margin:0;display:flex;flex-direction:column;align-items:center;gap:.6rem;min-height:0;height:100%;justify-content:center}
+.lb-fig img{max-width:100%;max-height:calc(100% - 2.5rem);object-fit:contain;border-radius:4px}
+.lb-fig figcaption{color:#F1F8F4;font-size:.95rem;text-align:center;min-height:1.4em}
+.lb-close,.lb-prev,.lb-next{display:grid;place-items:center;width:48px;height:48px;border-radius:50%;border:1px solid rgba(241,248,244,.3);background:rgba(241,248,244,.08);color:#F1F8F4;cursor:pointer}
+.lb-close svg,.lb-prev svg,.lb-next svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.lb-close{position:absolute;top:calc(8px + env(safe-area-inset-top,0px));right:max(8px,env(safe-area-inset-right,0px))}
+.lb-prev{grid-column:1;grid-row:1}
+.lb-next{grid-column:3;grid-row:1}
+.lb-count{grid-column:1/-1;grid-row:2;text-align:center;color:rgba(241,248,244,.7);font-family:var(--mono);font-size:.78rem;letter-spacing:.08em}
+@media (max-width:620px){.lb-prev,.lb-next{position:absolute;bottom:calc(10px + env(safe-area-inset-bottom,0px))}.lb-prev{left:16px}.lb-next{right:16px}.lb{grid-template-columns:minmax(0,1fr);padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))}.lb-fig{grid-column:1}}
+
 /* Contact */
 .contact-list{display:grid;grid-template-columns:auto minmax(0,1fr);gap:1rem 1.5rem;margin:0}
 .contact-list dt{font-family:var(--mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-top:.25rem}
@@ -511,6 +536,7 @@ html.locked{overflow:hidden}
       <a href="#sorties">Sorties</a>
       <a href="#parcours">Parcours</a>
       <a href="#saison">Saison</a>
+      <a href="#photos">Photos</a>
       <a href="#adhesion">Adhésion</a>
       <a href="#maillot">Commande maillot club</a>
       <a href="#contact">Contact</a>
@@ -705,6 +731,23 @@ html.locked{overflow:hidden}
         <li><span class="month">Été</span><h3>Une étape du Tour</h3><p>En 2025 puis en 2026, une partie de l’étape 11 du Tour de France 2025, autour de Toulouse.</p></li>
         <li><span class="month">Septembre</span><h3>La Saint-O</h3><p>La randonnée de Saint-Orens, rendez-vous de rentrée de la section.</p></li>
       </ol>
+    </div>
+  </section>
+
+  <section class="section" id="photos">
+    <div class="wrap stack">
+      <div class="sec-head">
+        <div>
+          <p class="kicker">Photos</p>
+          <h2>Photos du club</h2>
+          <p class="sec-sub">Les sorties, les escapades et les rendez-vous de la saison.</p>
+        </div>
+      </div>
+      <div class="gallery" id="gallery"></div>
+      <div class="gallery-empty" id="gallery-empty" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        <p><b>Les premières photos arrivent bientôt.</b><span>Vous avez des photos des sorties ? Envoyez-les à frfcyclo@gmail.com.</span></p>
+      </div>
     </div>
   </section>
 
@@ -967,6 +1010,13 @@ html.locked{overflow:hidden}
   </div>
 </footer>
 
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Photo agrandie" hidden>
+  <button class="lb-close" id="lb-close" type="button" aria-label="Fermer la photo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  <button class="lb-prev" id="lb-prev" type="button" aria-label="Photo précédente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <figure class="lb-fig"><img id="lb-img" alt=""><figcaption id="lb-cap"></figcaption></figure>
+  <button class="lb-next" id="lb-next" type="button" aria-label="Photo suivante"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+  <p class="lb-count" id="lb-count"></p>
+</div>
 <div class="sheet-scrim" id="sheet-scrim" hidden></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" hidden>
   <div class="sheet-head">
@@ -1599,6 +1649,54 @@ html.locked{overflow:hidden}
         :isIOS?"Suivez ces quatre étapes :"
         :"Ouvrez cette page sur votre iPhone ou votre iPad, puis suivez ces étapes :";
       show("ios");
+    });
+  })();
+
+  /* ---------- Photos du club : galerie et agrandissement ---------- */
+  /* Liste produite par source/build.py à partir du dossier source/photos/ */
+  var PHOTOS=__PHOTOS__;
+  (function(){
+    var gal=document.getElementById("gallery"),lb=document.getElementById("lb"),img=document.getElementById("lb-img");
+    var cap=document.getElementById("lb-cap"),count=document.getElementById("lb-count"),cur=0,opener=null,x0=null;
+    if(!PHOTOS.length){document.getElementById("gallery-empty").hidden=false;return;}
+    gal.innerHTML=PHOTOS.map(function(p,i){
+      return '<button type="button" class="ph" data-i="'+i+'" aria-label="Agrandir la photo'+(p.l?' : '+esc(p.l):' '+(i+1))+'">'+
+        '<img src="'+esc(p.m)+'" alt="'+esc(p.l||"")+'" width="'+p.mw+'" height="'+p.mh+'" loading="lazy" decoding="async"></button>';
+    }).join("");
+    function show(i){
+      cur=(i+PHOTOS.length)%PHOTOS.length;
+      var p=PHOTOS[cur];
+      img.src=p.u;img.alt=p.l||"";img.width=p.w;img.height=p.h;
+      cap.textContent=p.l||"";
+      count.textContent=(cur+1)+" / "+PHOTOS.length;
+    }
+    function open(i,btn){
+      opener=btn;show(i);lb.hidden=false;
+      document.documentElement.classList.add("locked");
+      document.getElementById("lb-close").focus();
+    }
+    function close(){
+      if(lb.hidden)return;
+      lb.hidden=true;document.documentElement.classList.remove("locked");
+      if(opener)opener.focus();
+    }
+    gal.addEventListener("click",function(ev){var b=ev.target.closest(".ph");if(b)open(+b.dataset.i,b);});
+    document.getElementById("lb-close").addEventListener("click",close);
+    document.getElementById("lb-prev").addEventListener("click",function(){show(cur-1);});
+    document.getElementById("lb-next").addEventListener("click",function(){show(cur+1);});
+    lb.addEventListener("click",function(ev){if(ev.target===lb)close();});
+    document.addEventListener("keydown",function(ev){
+      if(lb.hidden)return;
+      if(ev.key==="Escape")close();
+      else if(ev.key==="ArrowLeft")show(cur-1);
+      else if(ev.key==="ArrowRight")show(cur+1);
+    });
+    /* Glisser du doigt pour passer d'une photo à l'autre */
+    lb.addEventListener("touchstart",function(ev){x0=ev.touches[0].clientX;},{passive:true});
+    lb.addEventListener("touchend",function(ev){
+      if(x0===null)return;
+      var dx=ev.changedTouches[0].clientX-x0;x0=null;
+      if(Math.abs(dx)>50)show(cur+(dx<0?1:-1));
     });
   })();
 
