@@ -12,6 +12,7 @@ y est aussi intégré, en secours : au chargement, la page relit data/sorties.js
 import argparse
 import base64
 import html
+import io
 import json
 import re
 from pathlib import Path
@@ -71,13 +72,22 @@ def preparer_photos():
 
 def galerie_html(photos, differe):
     """Vignettes de la galerie, écrites directement dans la page comme le logo et le maillot."""
-    vignettes, chargement = [], ' loading="lazy"' if differe else ""
+    vignettes, chargement = [], ' loading="lazy" decoding="async"' if differe else ""
     for i, p in enumerate(photos):
         etiquette = f"Agrandir la photo : {p['l']}" if p["l"] else f"Agrandir la photo {i + 1}"
         vignettes.append(f'<button type="button" class="ph" data-i="{i}" aria-label="{html.escape(etiquette)}">'
                          f'<img src="{html.escape(p["m"])}" alt="{html.escape(p["l"])}" width="{p["mw"]}" height="{p["mh"]}"'
-                         f'{chargement} decoding="async"></button>')
+                         f'{chargement}></button>')
     return "".join(vignettes)
+
+
+def jpeg_classique(chemin):
+    """Réencode une photo en JPEG classique (non progressif), la forme que la visionneuse de l'aperçu affiche."""
+    from PIL import Image
+    tampon = io.BytesIO()
+    with Image.open(chemin) as im:
+        im.convert("RGB").save(tampon, "JPEG", quality=80)
+    return base64.b64encode(tampon.getvalue()).decode()
 
 
 def logo_svg(nom):
@@ -197,7 +207,7 @@ def main():
           f"{len(photos)} photo(s), manifest.webmanifest, sw.js")
     if args.apercu:
         # Seules les vignettes sont intégrées : l'agrandissement reprend la vignette, la copie reste légère
-        integrees = [dict(p, m="data:image/jpeg;base64," + b64(PHOTOS_WEB / "mini" / p["f"]), w=p["mw"], h=p["mh"])
+        integrees = [dict(p, m="data:image/jpeg;base64," + jpeg_classique(PHOTOS_WEB / "mini" / p["f"]), w=p["mw"], h=p["mh"])
                      for p in photos]
         apercu = assembler(integrees, differe=False)
         Path(args.apercu).write_text(apercu, encoding="utf-8")
