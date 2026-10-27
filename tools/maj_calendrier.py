@@ -158,7 +158,7 @@ def lire_evenement(ev):
         "debut": debut.astimezone(TZ), "titre": titre,
         "garmin": garmin[-1] if garmin else None, "openrunner": openrunner[-1] if openrunner else None,
         "km": km if km and 40 <= km <= 200 else None, "dp": dplus if dplus and 100 <= dplus <= 2500 else None,
-        "variantes": variantes,
+        "variantes": variantes, "nom": nom_parcours(titre),
     }
 
 
@@ -166,6 +166,19 @@ def cle_parcours(titre):
     """« 029T » pour « Parcours 029 AH … » : le numéro sur 3 chiffres, puis H (horaire) ou T (anti-horaire)."""
     m = NUMERO.search(titre)
     return m and m.group(1).zfill(3) + ("H" if m.group(2).upper() == "H" else "T")
+
+
+def nom_parcours(titre):
+    """« Lacougotte » pour « Parcours 029 AH Lacougotte 78km Garmin » : le lieu, sans numéro, sens, version ni distance."""
+    m = NUMERO.search(titre)
+    if not m:
+        return None
+    reste = titre[m.end():].replace("_", " ")
+    reste = re.sub(r"\bv\s?\d+(?:\.\d+)*|\d{2,3}(?:[.,]\d+)?\s*km?\b|\d{3,4}\s*m?\s*(?:dev\+?|D\+)|\d{3,4}\s*m\b|\bGarmin\b"
+                   r"|\bmodifi[ée]e?\b|(?<![\w'’-])(?:AH|[HTLC])(?![\w'’-])", " ", reste, flags=re.I)
+    nom = " ".join(reste.split()).strip(" -·,:")
+    # Un nom de lieu commence par une majuscule : « froid », « travaux » ou « CHANGEMENT D'HORAIRE » sont écartés
+    return nom if re.match(r"[A-ZÀ-Ý]", nom) and not nom.isupper() and not re.search(r"\d", nom) else None
 
 
 def lire_openrunner(lien):
@@ -207,10 +220,10 @@ def construire(ics, maintenant, ancien=None):
         cle = cle_parcours(e["titre"])
         if not cle or not maintenant <= e["debut"] < maintenant + PROGRAMME:
             continue
-        p = biblio.setdefault(cle, {"n": cle[:3], "s": cle[3], "v": set(), "km": None, "dp": None,
+        p = biblio.setdefault(cle, {"n": cle[:3], "s": cle[3], "nom": None, "v": set(), "km": None, "dp": None,
                                     "g": None, "o": None, "next": e["debut"]})
         p["v"] |= e["variantes"]
-        for champ, cle_ev in (("km", "km"), ("dp", "dp"), ("g", "garmin"), ("o", "openrunner")):
+        for champ, cle_ev in (("nom", "nom"), ("km", "km"), ("dp", "dp"), ("g", "garmin"), ("o", "openrunner")):
             if e[cle_ev]:
                 p[champ] = e[cle_ev]
     for cle, p in biblio.items():
@@ -266,9 +279,9 @@ def construire(ics, maintenant, ancien=None):
 
     jour = lambda d: d.strftime("%Y-%m-%d") if d else None
     return {
-        "up": [{"t": e["titre"], "d": e["debut"].strftime("%Y-%m-%dT%H:%M"), "g": e["garmin"],
+        "up": [{"t": e["titre"], "nom": e["nom"], "d": e["debut"].strftime("%Y-%m-%dT%H:%M"), "g": e["garmin"],
                 "o": e["openrunner"], "km": e["km"], "dp": e["dp"]} for e in a_venir],
-        "lib": [{"n": p["n"], "s": p["s"], "v": "".join(sorted(p["v"])), "km": p["km"], "dp": p["dp"],
+        "lib": [{"n": p["n"], "s": p["s"], "nom": p["nom"], "v": "".join(sorted(p["v"])), "km": p["km"], "dp": p["dp"],
                  "g": p["g"], "o": p["o"], "next": jour(p["next"]),
                  **({"pv": p["pv"]} if p.get("pv") else {})}
                 for _, p in sorted(biblio.items())],

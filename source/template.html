@@ -1071,6 +1071,8 @@ html.locked{overflow:hidden}
     if(m)return "Parcours "+("00"+m[1]).slice(-3)+" "+LETTRE[dirOf(m)];
     return t;
   }
+  /* « Parcours 029 AH · Lacougotte » : le nom du lieu, quand le calendrier le donne */
+  function rideTitle(e){var t=title(e.t);return e.nom&&t!==e.t?t+" · "+e.nom:t;}
   function isChange(e){return /CHANGEMENT HORAIRE/i.test(e.t);}
   /* H : sens des aiguilles d'une montre ; AH (anciennement T) : sens anti-horaire, noté T dans les données */
   var SENS={H:"sens horaire",T:"sens anti-horaire"},LETTRE={H:"H",T:"AH"};
@@ -1163,7 +1165,7 @@ html.locked{overflow:hidden}
   function stamp(x){return ""+x.getFullYear()+pad(x.getMonth()+1)+pad(x.getDate())+"T"+pad(x.getHours())+pad(x.getMinutes())+"00";}
   function renderSorties(){
     now=new Date();
-    events=DATA.up.map(function(e){return {t:e.t,date:parse(e.d),g:e.g,o:e.o,km:e.km,dp:e.dp};})
+    events=DATA.up.map(function(e){return {t:e.t,nom:e.nom,date:parse(e.d),g:e.g,o:e.o,km:e.km,dp:e.dp};})
       .filter(function(e){return e.date>now;});
     var caption=document.getElementById("cal-caption");
     if(!events.some(function(e){return !isChange(e);})){
@@ -1193,7 +1195,7 @@ html.locked{overflow:hidden}
     if(next){
       var diff=Math.round((dayStart(next.date)-dayStart(now))/864e5);
       document.getElementById("next-when").textContent=diff===0?"Aujourd’hui":diff===1?"Demain, "+JOURS[next.date.getDay()]:cap(dateFr(next.date));
-      document.getElementById("next-what").textContent=hm(next.date)+" · "+title(next.t);
+      document.getElementById("next-what").textContent=hm(next.date)+" · "+rideTitle(next);
       var NP=profileFor(next.t);
       document.getElementById("next-dist").textContent=NP?kmText(NP)+" km · "+nf(NP.up)+" m D+"
         :next.km?nf(next.km)+" km"+(next.dp?" · "+nf(next.dp)+" m D+":"")
@@ -1205,7 +1207,7 @@ html.locked{overflow:hidden}
       if(next.g){route.href=next.g;route.hidden=false;}
       var end=new Date(next.date.getTime()+4*36e5);
       document.getElementById("next-cal").href="https://calendar.google.com/calendar/render?action=TEMPLATE"+
-        "&text="+encodeURIComponent(title(next.t)+" · CCQF")+
+        "&text="+encodeURIComponent(rideTitle(next)+" · CCQF")+
         "&dates="+stamp(next.date)+"/"+stamp(end)+"&ctz=Europe/Paris"+
         "&location="+encodeURIComponent("Parking derrière la mairie, Place de la Mairie, 31130 Quint-Fonsegrives")+
         "&details="+encodeURIComponent((next.g?"Trace : "+next.g+"\n":"")+"Départ à "+hm(next.date)+".");
@@ -1234,7 +1236,7 @@ html.locked{overflow:hidden}
         :e.g?'<a class="cal-go" href="'+esc(e.g)+'" target="_blank" rel="noopener">'+ICON_ROUTE+'Trace Garmin</a>':'<span></span>';
       return '<li class="cal-row'+(e===next?' first':'')+'">'+
         '<span class="cal-date"><b>'+e.date.getDate()+'</b><small>'+MC[e.date.getMonth()]+'</small></span>'+
-        '<span class="cal-info"><span class="cal-title">'+esc(title(e.t))+(newTime?' <span class="pill">Nouvel horaire</span>':'')+'</span>'+
+        '<span class="cal-info"><span class="cal-title">'+esc(rideTitle(e))+(newTime?' <span class="pill">Nouvel horaire</span>':'')+'</span>'+
         '<span class="cal-meta">'+meta+'</span><span class="cal-stats">'+stats+'</span></span>'+
         chart+action+'</li>';
     }).join("");
@@ -1286,13 +1288,15 @@ html.locked{overflow:hidden}
     var order=filter==="H"||filter==="T"?[filter]:["H","T"];
     var blocks=order.filter(function(s){return l.dirs[s];}).map(function(s){return dirBlock(l.dirs[s]);}).join("");
     var both=l.dirs.H&&l.dirs.T,P=libProfile(l.dirs.H)||libProfile(l.dirs.T),thumb="";
+    /* Nom du lieu : le plus détaillé des deux sens (« Belcastel-Segreville » plutôt que « Belcastel ») */
+    var nom=[l.dirs.H,l.dirs.T].reduce(function(a,p){return p&&p.nom&&p.nom.length>a.length?p.nom:a;},"");
     if(P){
       var q=project(P,84,60,5);
       thumb='<span class="pc-trace" aria-hidden="true"><svg viewBox="0 0 84 60"><path class="pt-line" d="'+pathOf(q)+'"/>'+
         '<circle class="pt-start" cx="'+q[0][0].toFixed(1)+'" cy="'+q[0][1].toFixed(1)+'" r="3"/></svg></span>';
     }
     return '<article class="pc"><div class="pc-head"><span class="pc-num">'+l.n+'</span><span class="pc-sub">'+
-      (both?'Parcours · deux sens':'Parcours · '+SENS[l.dirs.H?"H":"T"])+'</span>'+thumb+'</div>'+blocks+'</article>';
+      (nom?esc(nom):'Parcours')+' · '+(both?'deux sens':SENS[l.dirs.H?"H":"T"])+'</span>'+thumb+'</div>'+blocks+'</article>';
   }
   function renderLib(){
     var term=q.value.replace(/\D/g,"");
@@ -1327,7 +1331,7 @@ html.locked{overflow:hidden}
     PR=next?profileFor(next.t):null;
     stage.hidden=!PR;
     if(PR){
-      var label=title(next.t)+", "+sens(next.t);
+      var label=rideTitle(next)+", "+sens(next.t);
       document.getElementById("stage-title").textContent="Profil de la prochaine sortie · "+label;
       document.getElementById("stage-meta").innerHTML=kmText(PR)+" km · "+nf(PR.up)+" m D+ · point haut "+PR.max+" m · "+
         '<a href="'+esc(PR.or)+'" target="_blank" rel="noopener">trace OpenRunner</a>';
@@ -1431,14 +1435,14 @@ html.locked{overflow:hidden}
   }
   function openSheet(e,btn){
     var P=profileFor(e.t);
-    if(P)showSheet(P,{when:cap(dateFr(e.date))+" · départ "+hm(e.date),title:title(e.t),sens:sens(e.t),g:e.g},btn);
+    if(P)showSheet(P,{when:cap(dateFr(e.date))+" · départ "+hm(e.date),title:rideTitle(e),sens:sens(e.t),g:e.g},btn);
   }
   function openLibSheet(key,btn){
     var p=DATA.lib.filter(function(x){return x.n+x.s===key;})[0],P=libProfile(p);
     if(!P)return;
     var nx=soonDate(p),prochaine=p.next?parse(p.next):null;
     showSheet(P,{when:nx?"Au programme le "+dateFr(nx):prochaine?"Prochaine sortie : "+MOIS[prochaine.getMonth()]+" "+prochaine.getFullYear():"Bibliothèque des parcours",
-      title:"Parcours "+p.n+" "+LETTRE[p.s],sens:SENS[p.s],g:p.g},btn);
+      title:"Parcours "+p.n+" "+LETTRE[p.s]+(p.nom?" · "+p.nom:""),sens:SENS[p.s],g:p.g},btn);
   }
   libEl.addEventListener("click",function(ev){
     var b=ev.target.closest("button.dir-ap");
