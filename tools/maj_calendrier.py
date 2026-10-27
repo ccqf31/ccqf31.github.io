@@ -46,6 +46,9 @@ ID_OPENRUNNER = re.compile(r"(?:route-details/|[?&]id=|/r/)(\d+)")
 APERCU_ALTITUDES = 160      # points du petit profil d'altitude de chaque parcours
 APERCU_TOLERANCE = 0.00025  # simplification du tracé (en degrés, environ 25 m)
 APERCU_VERSION = 2          # à augmenter si le calcul des aperçus change : ils seront recalculés
+# Parcours sans trace dans leur sens, dessinés avec la trace du sens opposé parcourue à l'envers
+# (choix du club : le 007 AH est le 007 H dans l'autre sens)
+A_L_ENVERS = {"007T": "007H"}
 
 
 def telecharger(url, essais=3):
@@ -139,6 +142,18 @@ def apercu(trace):
     }
 
 
+def a_l_envers(trace):
+    """La même trace parcourue dans l'autre sens : profil et tracé retournés, montée et descente échangées.
+    Sans lien OpenRunner : il ouvrirait la trace dans le sens opposé."""
+    return dict(trace, el=encoder(decoder(trace["el"], 1)[::-1]), shape=encoder(decoder(trace["shape"], 2)[::-1]),
+                ascent=trace["descent"], descent=trace["ascent"], **{"or": None})
+
+
+def apercu_a_l_envers(pv):
+    """Aperçu de la bibliothèque retourné ; sur une boucle, la montée est égale à la descente."""
+    return dict(pv, pe=encoder(decoder(pv["pe"], 1)[::-1]), ps=encoder(decoder(pv["ps"], 2)[::-1]))
+
+
 def lire_evenement(ev):
     debut = ev.get("DTSTART").dt
     if not isinstance(debut, datetime.datetime):
@@ -189,7 +204,8 @@ def lire_openrunner(lien):
     elev = route["elevation"]
     return {
         "name": route["name"], "len": route["length"], "step": elev.get("interval", 100),
-        "ascent": elev["ascent"], "el": elev["full_encoded"], "shape": route["shape"]["full_encoded"],
+        "ascent": elev["ascent"], "descent": elev.get("descent", elev["ascent"]),
+        "el": elev["full_encoded"], "shape": route["shape"]["full_encoded"],
         "or": OPENRUNNER_PAGE.format(m.group(1)),
     }
 
@@ -240,8 +256,10 @@ def construire(ics, maintenant, ancien=None):
     for e in dimanches:
         cle = cle_parcours(e["titre"])
         lien = e["openrunner"] or trace_garmin(e["garmin"], cle) or biblio[cle]["o"]
+        envers = not lien and biblio.get(A_L_ENVERS.get(cle), {}).get("o")
         try:
-            trace = lire_openrunner(lien)
+            trace = lire_openrunner(lien or envers)
+            trace = a_l_envers(trace) if envers and trace else trace
         except Exception as err:  # une trace introuvable ne bloque pas la mise à jour
             print(f"Attention : trace OpenRunner illisible pour {e['titre']} ({lien}) : {err}", file=sys.stderr)
             trace = None
@@ -249,7 +267,7 @@ def construire(ics, maintenant, ancien=None):
             print(f"Attention : pas de trace OpenRunner pour {e['titre']}", file=sys.stderr)
             continue
         v_cal, v_or = VERSION.search(e["titre"]), VERSION.search(trace["name"])
-        if v_cal and (not v_or or v_cal.group(1) != v_or.group(1)):
+        if v_cal and not envers and (not v_or or v_cal.group(1) != v_or.group(1)):
             print(f"Attention : « {e['titre']} » renvoie vers la trace OpenRunner « {trace['name']} » "
                   "(version différente) : vérifiez le lien.", file=sys.stderr)
         km, dp = round(trace["len"] / 1000, 1), trace["ascent"]
@@ -276,6 +294,11 @@ def construire(ics, maintenant, ancien=None):
                 continue
         p["o"] = lien
         p["km"], p["dp"] = round(p["pv"]["len"] / 1000, 1), p["pv"]["up"]
+    for cle, source in A_L_ENVERS.items():
+        p = biblio.get(cle)
+        if p and not p["o"] and biblio.get(source, {}).get("pv"):
+            p["pv"] = apercu_a_l_envers(biblio[source]["pv"])
+            p["km"], p["dp"] = round(p["pv"]["len"] / 1000, 1), p["pv"]["up"]
 
     jour = lambda d: d.strftime("%Y-%m-%d") if d else None
     return {

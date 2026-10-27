@@ -42,3 +42,6 @@ Pour qu'une sortie soit bien détaillée, son événement dans le calendrier doi
 Le lien OpenRunner peut être dans l'événement ou dans une autre sortie du même parcours. Sinon, la trace est retrouvée
 par le lien Garmin : `data/sorties.json` garde, d'une mise à jour à l'autre, la trace OpenRunner connue de chaque
 parcours Garmin dans chaque sens (table `traces`). Le script signale une trace OpenRunner dont la version diffère du calendrier.
+Un parcours sans trace dans son sens peut être dessiné avec la trace du sens opposé, parcourue à l'envers :
+c'est la liste `A_L_ENVERS` de `tools/maj_calendrier.py` (aujourd'hui, le 007 AH à partir du 007 H). Il n'a alors
+pas de lien OpenRunner, qui ouvrirait la trace dans le mauvais sens.
