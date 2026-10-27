@@ -45,3 +45,12 @@ parcours Garmin dans chaque sens (table `traces`). Le script signale une trace O
 Un parcours sans trace dans son sens peut être dessiné avec la trace du sens opposé, parcourue à l'envers :
 c'est la liste `A_L_ENVERS` de `tools/maj_calendrier.py` (aujourd'hui, le 007 AH à partir du 007 H). Il n'a alors
 pas de lien OpenRunner, qui ouvrirait la trace dans le mauvais sens.
+
+Le script vérifie chaque trace : si sa distance s'écarte trop de celle du titre (« 82km »), ou si elle ne passe pas
+par la commune que cite le nom du parcours (« Nailloux »), elle vient d'un lien erroné du calendrier et elle est écartée.
+Le script essaie alors les liens des sorties passées du même numéro, et garde le premier qui se vérifie.
+
+L'aperçu de chaque tracé nomme ses principaux villages : d'abord les communes citées dans le nom du parcours,
+puis les plus peuplées parmi celles dont la mairie est à moins de 600 m du tracé. La liste des communes
+(Haute-Garonne et départements voisins, avec la position de leur mairie) est gardée dans `tools/communes.json`,
+lue une fois sur geo.api.gouv.fr : supprimer ce fichier pour la relire.

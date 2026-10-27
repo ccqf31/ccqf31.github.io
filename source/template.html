@@ -233,6 +233,8 @@ h2{font-size:var(--step3);font-weight:800;text-transform:uppercase;letter-spacin
 .sheet-kicker{font-family:var(--mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--vert-text)}
 .sheet-title{font-family:var(--display);font-weight:800;font-size:1.9rem;text-transform:uppercase;line-height:1}
 .sheet-stats{font-family:var(--mono);font-size:.9rem;font-variant-numeric:tabular-nums}
+.sheet-villages{font-size:.92rem;color:var(--muted)}
+.sheet-villages b{font-weight:600;color:var(--ink)}
 .sheet-close{flex:none;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer}
 .sheet-close svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 .sheet-map{height:min(52vh,400px);min-height:240px;background:var(--paper);border:1px solid var(--line);border-radius:8px}
@@ -243,6 +245,8 @@ h2{font-size:var(--step3);font-weight:800;text-transform:uppercase;letter-spacin
 .m-km text{fill:var(--ink);font-family:var(--mono);font-size:10px}
 .m-start{fill:var(--jaune);stroke:var(--ink);stroke-width:2}
 .m-label{fill:var(--ink);font-family:var(--body);font-weight:600;font-size:12px}
+.m-vil circle{fill:var(--ink);stroke:var(--surface);stroke-width:1.5}
+.m-vil text{fill:var(--ink);font-family:var(--body);font-weight:600;font-size:11.5px;paint-order:stroke;stroke:var(--paper);stroke-width:3.5px;stroke-linejoin:round}
 .sheet-legend{font-size:.85rem;color:var(--muted)}
 .sheet-links{display:flex;flex-wrap:wrap;gap:.6rem}
 .sheet-links a{flex:1 1 12rem;display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:48px;padding:.5rem 1rem;border:1px solid var(--line);border-radius:6px;text-decoration:none;font-weight:600;color:var(--ink)}
@@ -1028,11 +1032,12 @@ html.locked{overflow:hidden}
       <p class="sheet-kicker" id="sheet-when"></p>
       <h3 class="sheet-title" id="sheet-title">Aperçu du tracé</h3>
       <p class="sheet-stats" id="sheet-stats"></p>
+      <p class="sheet-villages" id="sheet-villages" hidden></p>
     </div>
     <button class="sheet-close" type="button" id="sheet-close" aria-label="Fermer l’aperçu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
   <div class="sheet-map" id="sheet-map" role="img"></div>
-  <p class="sheet-legend">Point jaune : départ et arrivée, parking derrière la mairie. Les flèches donnent le sens du parcours, les pastilles les kilomètres.</p>
+  <p class="sheet-legend">Point jaune : départ et arrivée, parking derrière la mairie. Les flèches donnent le sens du parcours, les pastilles les kilomètres, les petits points les principaux villages traversés.</p>
   <div class="sheet-links">
     <a class="primary" id="sheet-garmin" href="https://connect.garmin.com/" target="_blank" rel="noopener">Ouvrir dans Garmin Connect</a>
     <a id="sheet-or" href="https://www.openrunner.com/" target="_blank" rel="noopener">Ouvrir dans OpenRunner</a>
@@ -1099,6 +1104,8 @@ html.locked{overflow:hidden}
     }
     return out;
   }
+  /* Principaux villages traversés : [nom, latitude × 1e5, longitude × 1e5], dans l'ordre du parcours */
+  function villagesOf(vi){return (vi||[]).map(function(v){return {nom:v[0],pt:[v[1]/1e5,v[2]/1e5]};});}
   var PROF_CACHE={};
   function profileFor(t){
     var m=NUM.exec(t||"");
@@ -1110,7 +1117,7 @@ html.locked{overflow:hidden}
       for(var i=1;i<el.length;i++)if(el[i]>el[i-1])up+=el[i]-el[i-1];
       var mx=Math.max.apply(null,el);
       PROF_CACHE[key]={elev:el,pts:decodeValues(r.shape,2).map(function(p){return [p[0]/1e5,p[1]/1e5];}),
-        km:r.len/1000,step:r.step/1000,min:Math.min.apply(null,el),max:mx,peakI:el.indexOf(mx),up:up,or:r.or};
+        km:r.len/1000,step:r.step/1000,min:Math.min.apply(null,el),max:mx,peakI:el.indexOf(mx),up:up,or:r.or,vi:villagesOf(r.vi)};
     }
     return PROF_CACHE[key];
   }
@@ -1123,19 +1130,21 @@ html.locked{overflow:hidden}
     if(!LIB_CACHE[k]){
       var v=p.pv,el=decodeValues(v.pe,1);
       LIB_CACHE[k]={elev:el,pts:decodeValues(v.ps,2).map(function(q){return [q[0]/1e5,q[1]/1e5];}),
-        km:v.len/1000,step:v.st/1000,min:v.min,max:v.max,peakI:el.indexOf(Math.max.apply(null,el)),up:v.up,or:p.o};
+        km:v.len/1000,step:v.st/1000,min:v.min,max:v.max,peakI:el.indexOf(Math.max.apply(null,el)),up:v.up,or:p.o,vi:villagesOf(p.vi)};
     }
     return LIB_CACHE[k];
   }
   /* Place le tracé dans un cadre W×H en gardant ses proportions */
-  function project(P,W,H,pad){
+  /* Passage (latitude, longitude) → (x, y) qui fait tenir le tracé dans W × H, marge pad */
+  function projector(P,W,H,pad){
     var c=Math.cos(P.pts[0][0]*Math.PI/180);
     var xs=P.pts.map(function(p){return p[1]*c;}),ys=P.pts.map(function(p){return -p[0];});
     var x0=Math.min.apply(null,xs),x1=Math.max.apply(null,xs),y0=Math.min.apply(null,ys),y1=Math.max.apply(null,ys);
     var sc=Math.min((W-2*pad)/((x1-x0)||1),(H-2*pad)/((y1-y0)||1));
     var ox=(W-(x1-x0)*sc)/2,oy=(H-(y1-y0)*sc)/2;
-    return xs.map(function(x,i){return [ox+(x-x0)*sc,oy+(ys[i]-y0)*sc];});
+    return function(p){return [ox+(p[1]*c-x0)*sc,oy+(-p[0]-y0)*sc];};
   }
+  function project(P,W,H,pad){return P.pts.map(projector(P,W,H,pad));}
   function pathOf(q){return q.map(function(p,i){return (i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1);}).join("");}
   /* Flèches de sens réparties le long du parcours */
   function arrows(q,cls,size){
@@ -1410,7 +1419,7 @@ html.locked{overflow:hidden}
     if(!sheetP)return;
     var W=sheetMap.clientWidth,H=sheetMap.clientHeight;
     if(!W||!H)return;
-    var P=sheetP,q=project(P,W,H,30),ck=cumKm(P),st=q[0];
+    var P=sheetP,f=projector(P,W,H,30),q=P.pts.map(f),ck=cumKm(P),st=q[0];
     var s='<svg viewBox="0 0 '+W+' '+H+'" aria-hidden="true"><path class="m-line" d="'+pathOf(q)+'"/>'+arrows(q,"m-arrow",7);
     var placed=[st];
     for(var k=10;k<P.km-3;k+=10){
@@ -1422,7 +1431,21 @@ html.locked{overflow:hidden}
       s+='<g class="m-km"><circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="11"/>'+
          '<text x="'+p[0].toFixed(1)+'" y="'+(p[1]+3.5).toFixed(1)+'" text-anchor="middle">'+k+'</text></g>';
     }
+    /* Villages : un point et le nom, à droite du point ou sinon à gauche ; un nom qui chevaucherait
+       le départ, une pastille ou un autre nom n'est pas écrit (la liste au-dessus de la carte les donne tous) */
     var left=st[0]<W/2;
+    var boxes=[left?[st[0]-12,st[1]-12,st[0]+120,st[1]+30]:[st[0]-120,st[1]-12,st[0]+12,st[1]+30]]
+      .concat(placed.slice(1).map(function(o){return [o[0]-12,o[1]-12,o[0]+12,o[1]+12];}));
+    P.vi.forEach(function(v){
+      var p=f(v.pt),w=v.nom.length*6.4;
+      var side=[[p[0]+8,"start",p[0]+8,p[0]+8+w],[p[0]-8,"end",p[0]-8-w,p[0]-8]].filter(function(c){
+        var b=[c[2],p[1]-9,c[3],p[1]+5];
+        return b[0]>=2&&b[2]<=W-2&&!boxes.some(function(o){return b[0]<o[2]&&o[0]<b[2]&&b[1]<o[3]&&o[1]<b[3];});
+      })[0];
+      if(side)boxes.push([side[2],p[1]-9,side[3],p[1]+5]);
+      s+='<g class="m-vil"><circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="3.5"/>'+
+        (side?'<text x="'+side[0].toFixed(1)+'" y="'+(p[1]+4).toFixed(1)+'" text-anchor="'+side[1]+'">'+esc(v.nom)+'</text>':'')+'</g>';
+    });
     s+='<circle class="m-start" cx="'+st[0].toFixed(1)+'" cy="'+st[1].toFixed(1)+'" r="8"/>'+
        '<text class="m-label" x="'+(left?st[0]+14:st[0]-14).toFixed(1)+'" y="'+(st[1]+22).toFixed(1)+'" text-anchor="'+(left?"start":"end")+'">Départ · mairie</text>';
     sheetMap.innerHTML=s+'</svg>';
@@ -1432,6 +1455,9 @@ html.locked{overflow:hidden}
     document.getElementById("sheet-when").textContent=info.when;
     document.getElementById("sheet-title").textContent=info.title;
     document.getElementById("sheet-stats").textContent=(info.sens?cap(info.sens)+" · ":"")+kmText(P)+" km · "+nf(P.up)+" m D+ · point haut "+P.max+" m";
+    var vil=document.getElementById("sheet-villages");
+    vil.hidden=!P.vi.length;
+    vil.innerHTML=P.vi.length?"Par "+P.vi.map(function(v){return "<b>"+esc(v.nom)+"</b>";}).join(" · "):"";
     sheetMap.setAttribute("aria-label","Tracé GPS du "+info.title+(info.sens?", "+info.sens:"")+" : parcours de "+kmText(P)+" km au départ de la mairie de Quint-Fonsegrives.");
     var g=document.getElementById("sheet-garmin"),o=document.getElementById("sheet-or");
     g.hidden=!info.g;if(info.g)g.href=info.g;

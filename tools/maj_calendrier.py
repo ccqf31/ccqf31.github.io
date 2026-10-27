@@ -13,10 +13,13 @@ indisponible), le fichier existant est conservé tel quel et le script se termin
 """
 import argparse
 import datetime
+import functools
 import html
 import json
+import math
 import re
 import sys
+import unicodedata
 import time
 import urllib.error
 import urllib.parse
@@ -46,6 +49,13 @@ ID_OPENRUNNER = re.compile(r"(?:route-details/|[?&]id=|/r/)(\d+)")
 APERCU_ALTITUDES = 160      # points du petit profil d'altitude de chaque parcours
 APERCU_TOLERANCE = 0.00025  # simplification du tracé (en degrés, environ 25 m)
 APERCU_VERSION = 2          # à augmenter si le calcul des aperçus change : ils seront recalculés
+COMMUNES_API = "https://geo.api.gouv.fr/departements/{}/communes?fields=nom,mairie,centre,population&format=json"
+COMMUNES = Path(__file__).resolve().parent / "communes.json"   # liste lue une fois sur geo.api.gouv.fr
+DEPARTEMENTS = ("31", "81", "11", "09", "82")   # communes autour des parcours : Haute-Garonne et départements voisins
+VILLAGES_MAX = 6            # villages nommés sur la carte de l'aperçu de chaque tracé
+VILLAGES_DISTANCE = 600     # un village est traversé quand le tracé passe à moins de 600 m de sa mairie
+VILLAGES_CITE = 2000        # … ou à moins de 2 km quand le nom du parcours le cite (« Gardouch »)
+VILLAGES_ECART = 3000       # deux villages nommés sont à plus de 3 km l'un de l'autre, et du départ
 # Parcours sans trace dans leur sens, dessinés avec la trace du sens opposé parcourue à l'envers
 # (choix du club : le 007 AH est le 007 H dans l'autre sens)
 A_L_ENVERS = {"007T": "007H"}
@@ -60,7 +70,7 @@ def telecharger(url, essais=3):
         except urllib.error.HTTPError as err:
             if err.code not in (429, 500, 502, 503) or n == essais - 1:
                 raise
-        except urllib.error.URLError:
+        except (urllib.error.URLError, ConnectionError):
             if n == essais - 1:
                 raise
         time.sleep(5 * (n + 1))
@@ -140,6 +150,98 @@ def apercu(trace):
         "st": trace["step"] * pas, "pe": encoder([(v,) for v in alt_reduit]),
         "ps": encoder([(round(la * 1e5), round(lo * 1e5)) for la, lo in pts]),
     }
+
+
+@functools.lru_cache(maxsize=None)
+def communes():
+    """[nom, latitude, longitude, population] de chaque commune des DEPARTEMENTS, située par sa mairie.
+    La liste est gardée dans tools/communes.json : supprimer ce fichier pour la relire."""
+    if COMMUNES.exists():
+        return json.loads(COMMUNES.read_text(encoding="utf-8"))
+    liste = []
+    for dep in DEPARTEMENTS:
+        for c in json.loads(telecharger(COMMUNES_API.format(dep))):
+            point = (c.get("mairie") or c.get("centre") or {}).get("coordinates")
+            if point:
+                liste.append([c["nom"], point[1], point[0], c.get("population") or 0])
+    COMMUNES.write_text(json.dumps(liste, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+    return liste
+
+
+def normaliser(texte):
+    """« Saint-Félix-Lauragais » → « saint felix lauragais », « St Julia » → « saint julia » (entre espaces)."""
+    t = "".join(c for c in unicodedata.normalize("NFD", texte.lower()) if not unicodedata.combining(c))
+    t = re.sub(r"\bste\b", "sainte", re.sub(r"\bst\b", "saint", re.sub(r"[-'’]", " ", t)))
+    return " " + " ".join(t.split()) + " "
+
+
+def cite(commune, nom):
+    """Texte du nom (normalisé) du parcours qui cite la commune, ou "" : « St Felix » cite Saint-Félix-Lauragais."""
+    n = normaliser(commune)
+    court = re.sub(r"(?<=\w) (?:lauragais|(?:sur|de|d|du|des|les|en) \w.*) $", " ", n)   # « saint felix », « auriac »
+    return n if n in nom else court if court in nom else ""
+
+
+def ecart_au_trace(pts, la, lo):
+    """Distance (en mètres) du point (la, lo) au tracé pts ((latitude, longitude) en degrés),
+    et numéro du tronçon le plus proche."""
+    kx, ky = 111320 * math.cos(math.radians(pts[0][0])), 110540    # mètres par degré
+    px, py = lo * kx, la * ky
+    meilleur = (math.inf, 0)
+    for i, ((ya, xa), (yb, xb)) in enumerate(zip(pts, pts[1:])):
+        ax, ay, dx, dy = xa * kx, ya * ky, (xb - xa) * kx, (yb - ya) * ky
+        t = max(0, min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy))) if dx or dy else 0
+        meilleur = min(meilleur, (math.hypot(ax + t * dx - px, ay + t * dy - py), i))
+    return meilleur
+
+
+def communes_citees(nom):
+    """Communes que cite le nom du parcours, [] si la liste des communes manque. Une citation comprise dans une
+    autre plus longue ne compte pas : « St Jean Lherm » cite Saint-Jean-Lherm, pas Saint-Jean."""
+    try:
+        cites = [(cite(c[0], normaliser(nom)), c) for c in communes()] if nom else []
+    except Exception as err:
+        print(f"Attention : liste des communes indisponible : {err}", file=sys.stderr)
+        return []
+    cites = [(texte, c) for texte, c in cites if texte]
+    return [c for texte, c in cites if not any(texte != autre and texte in autre for autre, _ in cites)]
+
+
+def villages(pts, nom):
+    """Principaux villages d'un tracé ((latitude, longitude) en degrés) : d'abord ceux que cite le nom du
+    parcours, puis les plus peuplés, à plus de VILLAGES_ECART du départ et les uns des autres.
+    Rangés dans l'ordre du parcours : [nom, latitude × 1e5, longitude × 1e5]."""
+    kx, ky = 111320 * math.cos(math.radians(pts[0][0])), 110540
+    loin = lambda a, b: math.hypot((a[0] - b[0]) * ky, (a[1] - b[1]) * kx) > VILLAGES_ECART
+    marge = VILLAGES_CITE / ky
+    la0, la1 = min(p[0] for p in pts) - marge, max(p[0] for p in pts) + marge
+    lo0, lo1 = min(p[1] for p in pts) - marge * ky / kx, max(p[1] for p in pts) + marge * ky / kx
+    cites = {c[0] for c in communes_citees(nom)}
+    candidats = []
+    for commune, la, lo, pop in communes():
+        if not (la0 <= la <= la1 and lo0 <= lo <= lo1) or not loin((la, lo), pts[0]):
+            continue
+        d, i = ecart_au_trace(pts, la, lo)
+        if d <= (VILLAGES_CITE if commune in cites else VILLAGES_DISTANCE):
+            candidats.append((commune in cites, pop, i, commune, la, lo))
+    choisis = []
+    for v in sorted(candidats, reverse=True):
+        if len(choisis) < VILLAGES_MAX and (v[0] or all(loin(v[4:6], c[4:6]) for c in choisis)):
+            choisis.append(v)
+    return [[v[3], round(v[4] * 1e5), round(v[5] * 1e5)] for v in sorted(choisis, key=lambda v: v[2])]
+
+
+def doute(pv, km_annonce, cites):
+    """Raison de croire que l'aperçu pv n'est pas la trace du parcours, None s'il colle avec le calendrier :
+    distance annoncée dans le titre, communes citées dans le nom du parcours."""
+    km = pv["len"] / 1000
+    if km_annonce and abs(km - km_annonce) > max(5, km_annonce / 10):
+        return f"{km:.1f} km au lieu des {km_annonce:g} km annoncés"
+    if cites:
+        pts = [(la / 1e5, lo / 1e5) for la, lo in decoder(pv["ps"], 2)]
+        if all(ecart_au_trace(pts, c[1], c[2])[0] > VILLAGES_CITE for c in cites):
+            return f"ne passe pas par {cites[0][0]}"
+    return None
 
 
 def a_l_envers(trace):
@@ -230,11 +332,17 @@ def construire(ics, maintenant, ancien=None):
         garmin = ID_GARMIN.search(lien_garmin or "")
         return garmin and traces.get(garmin.group(1) + cle[3])
 
-    # Bibliothèque : les parcours au programme des 12 prochains mois (une entrée par numéro et par sens)
-    biblio = {}
+    # Bibliothèque : les parcours au programme des 12 prochains mois (une entrée par numéro et par sens).
+    # Les liens OpenRunner des sorties passées du même numéro ne servent qu'en secours, une fois vérifiés :
+    # avec la nouvelle liste du club, un même numéro a pu désigner un autre parcours.
+    biblio, passes = {}, {}
     for e in evenements:
         cle = cle_parcours(e["titre"])
-        if not cle or not maintenant <= e["debut"] < maintenant + PROGRAMME:
+        if not cle or e["debut"] >= maintenant + PROGRAMME:
+            continue
+        if e["debut"] < maintenant:
+            if e["openrunner"]:
+                passes.setdefault(cle, []).insert(0, e["openrunner"])     # le plus récent d'abord
             continue
         p = biblio.setdefault(cle, {"n": cle[:3], "s": cle[3], "nom": None, "v": set(), "km": None, "dp": None,
                                     "g": None, "o": None, "next": e["debut"]})
@@ -243,19 +351,50 @@ def construire(ics, maintenant, ancien=None):
             if e[cle_ev]:
                 p[champ] = e[cle_ev]
     for cle, p in biblio.items():
-        if p["o"] and ID_GARMIN.search(p["g"] or ""):
-            traces[ID_GARMIN.search(p["g"]).group(1) + cle[3]] = p["o"]
         p["o"] = p["o"] or trace_garmin(p["g"], cle)
+
+    # Aperçus (profil + tracé) de tous les parcours de la bibliothèque, depuis OpenRunner. Une trace dont la
+    # distance ou les communes ne collent pas avec le calendrier vient d'un lien erroné : elle est écartée.
+    # Un aperçu déjà calculé pour le même lien OpenRunner est repris tel quel : pas de nouvel appel.
+    deja = {p["o"]: p["pv"] for p in ancien.get("lib", [])
+            if p.get("o") and p.get("pv", {}).get("v") == APERCU_VERSION}
+    page = lambda lien: OPENRUNNER_PAGE.format(ID_OPENRUNNER.search(lien).group(1))
+    for cle, p in sorted(biblio.items()):
+        km_annonce, cites, garmin = p["km"], communes_citees(p["nom"]), ID_GARMIN.search(p["g"] or "")
+        liens = [(page(p["o"]), True)] if p["o"] and ID_OPENRUNNER.search(p["o"]) else []
+        liens += [(page(l), False) for l in passes.get(cle, []) if ID_OPENRUNNER.search(l)]
+        p["o"], vus = None, set()
+        for lien, du_programme in liens:
+            # Lien d'une sortie passée : seulement s'il se vérifie (distance annoncée ou commune citée)
+            if lien in vus or not (du_programme or km_annonce or cites):
+                continue
+            vus.add(lien)
+            try:
+                pv = deja.get(lien) or apercu(lire_openrunner(lien))
+            except Exception as err:
+                print(f"Attention : aperçu impossible pour le parcours {cle} ({lien}) : {err}", file=sys.stderr)
+                continue
+            raison = doute(pv, km_annonce, cites)
+            if raison:
+                print(f"Attention : parcours {cle} « {p['nom'] or ''} » : trace {lien} écartée ({raison}).", file=sys.stderr)
+                continue
+            p.update(o=lien, pv=pv, km=round(pv["len"] / 1000, 1), dp=pv["up"])
+            break
+        if garmin:      # la table suit la trace retenue (ou l'oublie si aucune ne convient)
+            if p["o"]:
+                traces[garmin.group(1) + cle[3]] = p["o"]
+            else:
+                traces.pop(garmin.group(1) + cle[3], None)
 
     # Événements à venir
     a_venir = [e for e in evenements if maintenant <= e["debut"] <= maintenant + datetime.timedelta(days=JOURS_A_VENIR)]
     dimanches = [e for e in a_venir if e["debut"].weekday() == 6 and NUMERO.search(e["titre"])][:NB_SORTIES]
 
-    # Détails OpenRunner des prochaines sorties du dimanche
+    # Détails OpenRunner des prochaines sorties du dimanche, avec la trace vérifiée de la bibliothèque
     profils = {}
     for e in dimanches:
         cle = cle_parcours(e["titre"])
-        lien = e["openrunner"] or trace_garmin(e["garmin"], cle) or biblio[cle]["o"]
+        lien = biblio[cle]["o"]
         envers = not lien and biblio.get(A_L_ENVERS.get(cle), {}).get("o")
         try:
             trace = lire_openrunner(lien or envers)
@@ -272,33 +411,28 @@ def construire(ics, maintenant, ancien=None):
                   "(version différente) : vérifiez le lien.", file=sys.stderr)
         km, dp = round(trace["len"] / 1000, 1), trace["ascent"]
         e["km"], e["dp"], e["openrunner"] = km, dp, trace["or"]
-        biblio[cle].update(km=km, dp=dp, o=trace["or"])
+        biblio[cle].update(km=km, dp=dp)
         profils[cle] = {k: trace[k] for k in ("name", "len", "step", "el", "shape", "or")}
 
-    # Aperçus (profil + tracé) de tous les parcours de la bibliothèque, depuis OpenRunner.
-    # Un aperçu déjà calculé pour le même lien OpenRunner est repris tel quel : pas de nouvel appel.
-    deja = {p["o"]: p["pv"] for p in ancien.get("lib", [])
-            if p.get("o") and p.get("pv", {}).get("v") == APERCU_VERSION}
-    for cle, p in sorted(biblio.items()):
-        if not p["o"] or not ID_OPENRUNNER.search(p["o"]):
-            continue
-        lien = OPENRUNNER_PAGE.format(ID_OPENRUNNER.search(p["o"]).group(1))
-        if lien in deja:
-            p["pv"] = deja[lien]
-        else:
-            try:
-                p["pv"] = apercu(lire_openrunner(lien))
-                time.sleep(0.3)
-            except Exception as err:
-                print(f"Attention : aperçu impossible pour le parcours {cle} ({lien}) : {err}", file=sys.stderr)
-                continue
-        p["o"] = lien
-        p["km"], p["dp"] = round(p["pv"]["len"] / 1000, 1), p["pv"]["up"]
     for cle, source in A_L_ENVERS.items():
         p = biblio.get(cle)
         if p and not p["o"] and biblio.get(source, {}).get("pv"):
             p["pv"] = apercu_a_l_envers(biblio[source]["pv"])
             p["km"], p["dp"] = round(p["pv"]["len"] / 1000, 1), p["pv"]["up"]
+
+    # Principaux villages de chaque parcours, d'après le tracé de son aperçu et son nom
+    try:
+        for p in biblio.values():
+            if p.get("pv"):
+                p["vi"] = villages([(la / 1e5, lo / 1e5) for la, lo in decoder(p["pv"]["ps"], 2)], p["nom"])
+    except Exception as err:  # liste des communes indisponible : on garde les villages de la mise à jour précédente
+        print(f"Attention : villages non recalculés : {err}", file=sys.stderr)
+        precedents = {q["n"] + q["s"]: q.get("vi") for q in ancien.get("lib", [])}
+        for cle, p in biblio.items():
+            p["vi"] = p.get("vi") or precedents.get(cle)
+    for cle, prof in profils.items():
+        if biblio[cle].get("vi"):
+            prof["vi"] = biblio[cle]["vi"]
 
     jour = lambda d: d.strftime("%Y-%m-%d") if d else None
     return {
@@ -306,7 +440,7 @@ def construire(ics, maintenant, ancien=None):
                 "o": e["openrunner"], "km": e["km"], "dp": e["dp"]} for e in a_venir],
         "lib": [{"n": p["n"], "s": p["s"], "nom": p["nom"], "v": "".join(sorted(p["v"])), "km": p["km"], "dp": p["dp"],
                  "g": p["g"], "o": p["o"], "next": jour(p["next"]),
-                 **({"pv": p["pv"]} if p.get("pv") else {})}
+                 **({"pv": p["pv"]} if p.get("pv") else {}), **({"vi": p["vi"]} if p.get("vi") else {})}
                 for _, p in sorted(biblio.items())],
         "prof": profils,
         "traces": dict(sorted(traces.items())),
