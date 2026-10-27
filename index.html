@@ -1247,8 +1247,9 @@ img{max-width:100%}
     sundays=rides.filter(function(e){return e.date.getDay()===0;}).slice(0,4);
     document.getElementById("cal-list").innerHTML=sundays.map(function(e,idx){
       var P=profileFor(e.t),newTime=changeDays[dayStart(e.date).getTime()];
-      var meta=cap(dateFr(e.date))+" · départ "+hm(e.date)+(sens(e.t)?" · "+sens(e.t):"");
-      var stats=P?kmText(P)+" km · "+nf(P.up)+" m D+":e.km?nf(e.km)+" km"+(e.dp?" · "+nf(e.dp)+" m D+":""):"Distance : voir la trace";
+      var meta=cap(dateFr(e.date))+(sens(e.t)?" · "+sens(e.t):"");
+      var stats=(P?kmText(P)+" km · "+nf(P.up)+" m D+":e.km?nf(e.km)+" km"+(e.dp?" · "+nf(e.dp)+" m D+":""):"Distance : voir la trace")+
+        " · départ\u00a0"+hm(e.date);
       var chart=P?'<span class="cal-prof" role="img" aria-label="Courbe de dénivelé : de '+P.min+' à '+P.max+' m d’altitude">'+miniProfile(P)+'</span>':'<span class="cal-prof"></span>';
       var action=P?'<button class="cal-go" type="button" data-i="'+idx+'" aria-haspopup="dialog">'+ICON_MAP+'Aperçu du tracé</button>'
         :e.g?'<a class="cal-go" href="'+esc(e.g)+'" target="_blank" rel="noopener">'+ICON_ROUTE+'Trace Garmin</a>':'<span></span>';
