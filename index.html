@@ -1346,11 +1346,13 @@ img{max-width:100%}
   var stage=document.getElementById("stage"),plot=document.getElementById("stage-plot"),traceEl=document.getElementById("stage-trace");
   var PR=null;
   function setupStage(){
-    PR=next?profileFor(next.t):null;
+    /* Le parcours libre du mercredi n'a pas de profil : on montre la prochaine sortie qui en a un */
+    var R=rides.filter(function(e){return profileFor(e.t);})[0]||null;
+    PR=R?profileFor(R.t):null;
     stage.hidden=!PR;
     if(PR){
-      var label=rideTitle(next)+", "+sens(next.t);
-      document.getElementById("stage-title").textContent="Profil de la prochaine sortie · "+label;
+      var label=rideTitle(R)+", "+sens(R.t);
+      document.getElementById("stage-title").textContent=(R===next?"Profil de la prochaine sortie · ":"Profil de la sortie du "+dateFr(R.date)+" · ")+label;
       document.getElementById("stage-meta").innerHTML=kmText(PR)+" km · "+nf(PR.up)+" m D+ · point haut "+PR.max+" m · "+
         '<a href="'+esc(PR.or)+'" target="_blank" rel="noopener">trace OpenRunner</a>';
       plot.setAttribute("aria-label","Profil d’altitude du "+label+" : "+kmText(PR)+" km, de "+PR.min+" à "+PR.max+" m d’altitude, "+PR.up+" m de dénivelé positif.");
