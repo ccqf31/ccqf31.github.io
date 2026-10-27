@@ -33,11 +33,14 @@ OPENRUNNER_PAGE = "https://www.openrunner.com/route-details/{}"
 TZ = ZoneInfo("Europe/Paris")
 NB_SORTIES = 4                                   # sorties du dimanche détaillées dans la page
 JOURS_A_VENIR = 60                               # fenêtre de la liste des événements à venir
-HISTORIQUE = datetime.timedelta(days=3 * 365)    # parcours roulés depuis 3 ans dans la bibliothèque
+HISTORIQUE = datetime.timedelta(days=3 * 365)    # sorties passées relues pour retrouver les traces OpenRunner
+PROGRAMME = datetime.timedelta(days=365)         # bibliothèque : les parcours au programme des 12 prochains mois
 SORTIE = Path(__file__).resolve().parent.parent / "data" / "sorties.json"
 
-# « Parcours 012H v2.1 Garmin », « Parcours 57 T L », « Parcours Garmin 04_H »…
-NUMERO = re.compile(r"[Pp]arcou?rs?t?\s*(?:Garmin\s*)?0*(\d{1,3})\s*[-_ ]?\s*([TH])", re.I)
+# « Parcours 029 AH Lacougotte 78km Garmin », « Parcours 012H v2.1 Garmin », « Parcours 57 T L »…
+# H : sens horaire ; AH (anciennement T) : sens anti-horaire, noté T dans data/sorties.json
+NUMERO = re.compile(r"[Pp]arcou?rs?t?\s*(?:Garmin\s*)?0*(\d{1,3})\s*[-_ ]?\s*(AH|[TH])", re.I)
+ID_GARMIN = re.compile(r"course/(\d+)")
 VERSION = re.compile(r"\bv\s?(\d+(?:\.\d+)?)", re.I)
 ID_OPENRUNNER = re.compile(r"(?:route-details/|[?&]id=|/r/)(\d+)")
 APERCU_ALTITUDES = 160      # points du petit profil d'altitude de chaque parcours
@@ -150,13 +153,19 @@ def lire_evenement(ev):
     dplus = re.search(r"(?:d\s*:\s*|-\s*)(\d{3,4})\s*m\b|(\d{3,4})\s*dev", texte)
     km = float(km.group(1).replace(",", ".")) if km else None
     dplus = int(dplus.group(1) or dplus.group(2)) if dplus else None
-    variantes = {m.group(1) or m.group(2) for m in re.finditer(r"[_ ]([LC])(?:\b|_)|\b[TH]([LC])\b", titre)}
+    variantes = {m.group(1) or m.group(2) for m in re.finditer(r"[_ ]([LC])(?:\b|_)|\b(?:AH|[TH])([LC])\b", titre)}
     return {
         "debut": debut.astimezone(TZ), "titre": titre,
         "garmin": garmin[-1] if garmin else None, "openrunner": openrunner[-1] if openrunner else None,
         "km": km if km and 40 <= km <= 200 else None, "dp": dplus if dplus and 100 <= dplus <= 2500 else None,
         "variantes": variantes,
     }
+
+
+def cle_parcours(titre):
+    """« 029T » pour « Parcours 029 AH … » : le numéro sur 3 chiffres, puis H (horaire) ou T (anti-horaire)."""
+    m = NUMERO.search(titre)
+    return m and m.group(1).zfill(3) + ("H" if m.group(2).upper() == "H" else "T")
 
 
 def lire_openrunner(lien):
@@ -179,23 +188,35 @@ def construire(ics, maintenant, ancien=None):
     evenements = sorted(filter(None, (lire_evenement(e) for e in tous)),
                         key=lambda e: (e["debut"], e["titre"], e["garmin"] or "", e["openrunner"] or ""))
 
-    # Bibliothèque des parcours numérotés (une entrée par numéro et par sens)
+    # Trace OpenRunner déjà associée à chaque parcours Garmin, dans chaque sens (« 432047792T »).
+    # La nouvelle liste du club a changé des numéros (l'ancien 17 T est le 029 AH) et ses sorties n'ont
+    # souvent qu'un lien Garmin : la trace se retrouve par ce lien, gardé d'une mise à jour à l'autre.
+    ancien = ancien or {}
+    traces = dict(ancien.get("traces", {}))
+    for p in ancien.get("lib", []):
+        if p.get("o") and ID_GARMIN.search(p.get("g") or ""):
+            traces[ID_GARMIN.search(p["g"]).group(1) + p["s"]] = p["o"]
+
+    def trace_garmin(lien_garmin, cle):
+        garmin = ID_GARMIN.search(lien_garmin or "")
+        return garmin and traces.get(garmin.group(1) + cle[3])
+
+    # Bibliothèque : les parcours au programme des 12 prochains mois (une entrée par numéro et par sens)
     biblio = {}
     for e in evenements:
-        m = NUMERO.search(e["titre"])
-        if not m:
+        cle = cle_parcours(e["titre"])
+        if not cle or not maintenant <= e["debut"] < maintenant + PROGRAMME:
             continue
-        cle = m.group(1).zfill(3) + m.group(2).upper()
         p = biblio.setdefault(cle, {"n": cle[:3], "s": cle[3], "v": set(), "km": None, "dp": None,
-                                    "g": None, "o": None, "next": None, "last": None})
+                                    "g": None, "o": None, "next": e["debut"]})
         p["v"] |= e["variantes"]
         for champ, cle_ev in (("km", "km"), ("dp", "dp"), ("g", "garmin"), ("o", "openrunner")):
             if e[cle_ev]:
                 p[champ] = e[cle_ev]
-        if e["debut"] < maintenant:
-            p["last"] = e["debut"]
-        elif not p["next"]:
-            p["next"] = e["debut"]
+    for cle, p in biblio.items():
+        if p["o"] and ID_GARMIN.search(p["g"] or ""):
+            traces[ID_GARMIN.search(p["g"]).group(1) + cle[3]] = p["o"]
+        p["o"] = p["o"] or trace_garmin(p["g"], cle)
 
     # Événements à venir
     a_venir = [e for e in evenements if maintenant <= e["debut"] <= maintenant + datetime.timedelta(days=JOURS_A_VENIR)]
@@ -204,9 +225,8 @@ def construire(ics, maintenant, ancien=None):
     # Détails OpenRunner des prochaines sorties du dimanche
     profils = {}
     for e in dimanches:
-        m = NUMERO.search(e["titre"])
-        cle = m.group(1).zfill(3) + m.group(2).upper()
-        lien = e["openrunner"] or biblio[cle]["o"]
+        cle = cle_parcours(e["titre"])
+        lien = e["openrunner"] or trace_garmin(e["garmin"], cle) or biblio[cle]["o"]
         try:
             trace = lire_openrunner(lien)
         except Exception as err:  # une trace introuvable ne bloque pas la mise à jour
@@ -226,7 +246,7 @@ def construire(ics, maintenant, ancien=None):
 
     # Aperçus (profil + tracé) de tous les parcours de la bibliothèque, depuis OpenRunner.
     # Un aperçu déjà calculé pour le même lien OpenRunner est repris tel quel : pas de nouvel appel.
-    deja = {p["o"]: p["pv"] for p in (ancien or {}).get("lib", [])
+    deja = {p["o"]: p["pv"] for p in ancien.get("lib", [])
             if p.get("o") and p.get("pv", {}).get("v") == APERCU_VERSION}
     for cle, p in sorted(biblio.items()):
         if not p["o"] or not ID_OPENRUNNER.search(p["o"]):
@@ -249,10 +269,11 @@ def construire(ics, maintenant, ancien=None):
         "up": [{"t": e["titre"], "d": e["debut"].strftime("%Y-%m-%dT%H:%M"), "g": e["garmin"],
                 "o": e["openrunner"], "km": e["km"], "dp": e["dp"]} for e in a_venir],
         "lib": [{"n": p["n"], "s": p["s"], "v": "".join(sorted(p["v"])), "km": p["km"], "dp": p["dp"],
-                 "g": p["g"], "o": p["o"], "next": jour(p["next"]), "last": jour(p["last"]),
+                 "g": p["g"], "o": p["o"], "next": jour(p["next"]),
                  **({"pv": p["pv"]} if p.get("pv") else {})}
                 for _, p in sorted(biblio.items())],
         "prof": profils,
+        "traces": dict(sorted(traces.items())),
     }
 
 

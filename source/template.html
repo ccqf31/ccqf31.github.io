@@ -605,7 +605,7 @@ html.locked{overflow:hidden}
       </div>
       <ul class="points">
         <li><span class="mark" aria-hidden="true"></span><h3>Deux sorties par semaine</h3><p>Le dimanche matin, de 60 à 100 km selon la saison, et le mercredi à 14h00 sur un parcours libre.</p></li>
-        <li><span class="mark" aria-hidden="true"></span><h3><span id="club-count">48</span> parcours, deux sens</h3><p>Chaque parcours numéroté se roule dans le sens des aiguilles d’une montre (H) ou en sens inverse (T). Les traces sont sur Garmin Connect et OpenRunner.</p></li>
+        <li><span class="mark" aria-hidden="true"></span><h3><span id="club-count">48</span> parcours, deux sens</h3><p>Chaque parcours numéroté se roule dans le sens des aiguilles d’une montre (H) ou dans le sens anti-horaire (AH). Les traces sont sur Garmin Connect et OpenRunner.</p></li>
         <li><span class="mark" aria-hidden="true"></span><h3>Un week-end ailleurs</h3><p>Chaque année, quelques jours hors de Fonsegrives pour découvrir d’autres routes. En 2026 : trois jours en Dordogne.</p></li>
       </ul>
     </div>
@@ -689,7 +689,7 @@ html.locked{overflow:hidden}
         <div>
           <p class="kicker">Parcours</p>
           <h2>Les parcours du club</h2>
-          <p class="sec-sub"><span id="lib-count">48</span> parcours numérotés, roulés ces trois dernières années. Un même parcours peut se faire dans le sens horaire (H) ou en sens inverse (T) : <span id="lib-total">60</span> traces en tout, chacune avec son lien Garmin Connect ou OpenRunner à charger dans son compteur.</p>
+          <p class="sec-sub"><span id="lib-count">48</span> parcours numérotés au programme des douze prochains mois. Un même parcours peut se faire dans le sens horaire (H) ou dans le sens anti-horaire (AH) : <span id="lib-total">60</span> traces en tout, chacune avec son lien Garmin Connect ou OpenRunner à charger dans son compteur.</p>
         </div>
       </div>
       <div class="sub-block">
@@ -702,14 +702,14 @@ html.locked{overflow:hidden}
             <button class="chip" type="button" id="f-all" data-filter="all" aria-pressed="true">Tous</button>
             <button class="chip" type="button" id="f-soon" data-filter="soon" aria-pressed="false">Au programme</button>
             <button class="chip" type="button" id="f-h" data-filter="H" aria-pressed="false">↻ Sens horaire</button>
-            <button class="chip" type="button" id="f-t" data-filter="T" aria-pressed="false">↺ Sens inverse</button>
+            <button class="chip" type="button" id="f-t" data-filter="T" aria-pressed="false">↺ Sens anti-horaire</button>
           </div>
         </div>
         <p class="lib-status" id="lib-status" aria-live="polite"></p>
         <div class="lib" id="lib"></div>
         <div class="lib-foot">
           <button class="more-btn" type="button" id="lib-more" hidden>Afficher tous les parcours</button>
-          <p class="legend">H : sens horaire · T : sens inverse · C : version courte · L : version longue. Distance et dénivelé indiqués quand ils figurent dans le calendrier.</p>
+          <p class="legend">H : sens horaire · AH : sens anti-horaire · C : version courte · L : version longue. Distance et dénivelé indiqués quand ils figurent dans le calendrier.</p>
         </div>
       </div>
     </div>
@@ -1064,17 +1064,18 @@ html.locked{overflow:hidden}
   var DATA=__DATA__;
 
   var now=new Date();
-  var NUM=/[Pp]arcou?rs?t?\s*(?:Garmin\s*)?0*(\d{1,3})\s*[-_ ]?\s*([TH])/;
+  var NUM=/[Pp]arcou?rs?t?\s*(?:Garmin\s*)?0*(\d{1,3})\s*[-_ ]?\s*(AH|[TH])/;
   function title(t){
     if(/parcours libre/i.test(t))return "Parcours libre";
     var m=NUM.exec(t);
-    if(m)return "Parcours "+("00"+m[1]).slice(-3)+" "+m[2].toUpperCase();
+    if(m)return "Parcours "+("00"+m[1]).slice(-3)+" "+LETTRE[dirOf(m)];
     return t;
   }
   function isChange(e){return /CHANGEMENT HORAIRE/i.test(e.t);}
-  /* H : sens des aiguilles d'une montre ; T : même parcours en sens inverse */
-  var SENS={H:"sens horaire",T:"sens inverse"};
-  function sens(t){var m=NUM.exec(t);return m?SENS[m[2].toUpperCase()]:"";}
+  /* H : sens des aiguilles d'une montre ; AH (anciennement T) : sens anti-horaire, noté T dans les données */
+  var SENS={H:"sens horaire",T:"sens anti-horaire"},LETTRE={H:"H",T:"AH"};
+  function dirOf(m){return m[2].toUpperCase()==="H"?"H":"T";}
+  function sens(t){var m=NUM.exec(t);return m?SENS[dirOf(m)]:"";}
 
   /* ---------- Profils et tracés (traces OpenRunner de la section) ---------- */
   /* Décode une suite de valeurs au format « polyline » (altitudes : 1 valeur, tracé : latitude/longitude) */
@@ -1096,7 +1097,7 @@ html.locked{overflow:hidden}
   function profileFor(t){
     var m=NUM.exec(t||"");
     if(!m||!DATA.prof)return null;
-    var key=("00"+m[1]).slice(-3)+m[2].toUpperCase(),r=DATA.prof[key];
+    var key=("00"+m[1]).slice(-3)+dirOf(m),r=DATA.prof[key];
     if(!r)return null;
     if(!PROF_CACHE[key]){
       var el=decodeValues(r.el,1),up=0;
@@ -1265,19 +1266,19 @@ html.locked{overflow:hidden}
     return a&&b?(a<b?a:b):(a||b);
   }
   function dirBlock(p){
-    var nx=soonDate(p),ls=p.last?parse(p.last):null,name=SENS[p.s];
+    var nx=soonDate(p),prochaine=p.next?parse(p.next):null,name=SENS[p.s];
     var vars=p.v.split("").filter(Boolean).map(function(v){
       return '<span class="pc-var" title="'+(v==="C"?"Version courte":"Version longue")+'">'+v+'</span>';}).join("");
     var stats=p.km?'<span class="dir-stats">'+nf(p.km)+' km'+(p.dp?' · '+nf(p.dp)+' m D+':'')+'</span>'
       :'<span class="dir-stats none">Distance : voir la trace</span>';
     var date=nx?'<span class="dir-date"><span class="pill">Au programme</span>'+shortDate(nx)+'</span>'
-      :ls?'<span class="dir-date">Dernière sortie : '+MC[ls.getMonth()]+' '+ls.getFullYear()+'</span>':'<span class="dir-date"></span>';
+      :prochaine?'<span class="dir-date">Prochaine sortie : '+MC[prochaine.getMonth()]+' '+prochaine.getFullYear()+'</span>':'<span class="dir-date"></span>';
     var label='parcours '+p.n+' en '+name,P=libProfile(p);
     var chart=P?'<span class="cal-prof dir-prof" role="img" aria-label="Courbe de dénivelé, '+label+' : de '+P.min+' à '+P.max+' m d’altitude">'+miniProfile(P)+'</span>':'';
     var links=(P?'<button type="button" class="dir-ap" data-k="'+p.n+p.s+'" aria-haspopup="dialog" aria-label="Aperçu du tracé, '+label+'">Aperçu</button>':'')+
       (p.g?'<a href="'+esc(p.g)+'" target="_blank" rel="noopener" aria-label="Trace Garmin, '+label+'">Garmin</a>':'')+
       (p.o?'<a href="'+esc(p.o)+'" target="_blank" rel="noopener" aria-label="Trace OpenRunner, '+label+'">OpenRunner</a>':'');
-    return '<div class="dir"><span class="dir-badge" title="'+cap(name)+'">'+ARROW[p.s]+p.s+'</span>'+
+    return '<div class="dir"><span class="dir-badge" title="'+cap(name)+'">'+ARROW[p.s]+LETTRE[p.s]+'</span>'+
       '<span class="dir-name">'+cap(name)+vars+'</span>'+stats+date+chart+
       '<div class="dir-links">'+links+'</div></div>';
   }
@@ -1435,9 +1436,9 @@ html.locked{overflow:hidden}
   function openLibSheet(key,btn){
     var p=DATA.lib.filter(function(x){return x.n+x.s===key;})[0],P=libProfile(p);
     if(!P)return;
-    var nx=soonDate(p),ls=p.last?parse(p.last):null;
-    showSheet(P,{when:nx?"Au programme le "+dateFr(nx):ls?"Dernière sortie : "+MOIS[ls.getMonth()]+" "+ls.getFullYear():"Bibliothèque des parcours",
-      title:"Parcours "+p.n+" "+p.s,sens:SENS[p.s],g:p.g},btn);
+    var nx=soonDate(p),prochaine=p.next?parse(p.next):null;
+    showSheet(P,{when:nx?"Au programme le "+dateFr(nx):prochaine?"Prochaine sortie : "+MOIS[prochaine.getMonth()]+" "+prochaine.getFullYear():"Bibliothèque des parcours",
+      title:"Parcours "+p.n+" "+LETTRE[p.s],sens:SENS[p.s],g:p.g},btn);
   }
   libEl.addEventListener("click",function(ev){
     var b=ev.target.closest("button.dir-ap");

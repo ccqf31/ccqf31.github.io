@@ -27,6 +27,7 @@ Les sorties affichées viennent du calendrier Google « FRF Cyclo » (frfcyclo@g
 
 - `tools/maj_calendrier.py` lit le calendrier, repère les 4 prochaines sorties du dimanche et leur lien Garmin,
   retrouve la trace OpenRunner de chaque parcours (distance, dénivelé, profil, tracé) et écrit `data/sorties.json`.
+- La section « Les parcours du club » liste les parcours au programme des douze prochains mois.
   Les aperçus déjà calculés sont réutilisés : OpenRunner n'est interrogé que pour les nouveaux parcours.
 - La page lit `data/sorties.json` à chaque ouverture. Si le fichier manque, elle affiche le dernier état connu.
 - `.github/workflows/maj-calendrier.yml` lance la mise à jour toutes les heures et enregistre le fichier s'il a changé.
@@ -36,6 +37,8 @@ Lancer une mise à jour à la main :
     pip install -r tools/requirements.txt
     python3 tools/maj_calendrier.py
 
-Pour qu'une sortie soit bien détaillée, son événement dans le calendrier doit s'appeler « Parcours NNN H » ou « Parcours NNN T »
-(H : sens horaire, T : sens inverse) et contenir le lien Garmin. Le lien OpenRunner peut être dans l'événement
-ou dans une sortie précédente du même parcours. Le script signale une trace OpenRunner dont la version diffère du calendrier.
+Pour qu'une sortie soit bien détaillée, son événement dans le calendrier doit s'appeler « Parcours NNN H » ou « Parcours NNN AH »
+(H : sens horaire, AH : sens anti-horaire ; l'ancienne écriture T est aussi comprise) et contenir le lien Garmin.
+Le lien OpenRunner peut être dans l'événement ou dans une autre sortie du même parcours. Sinon, la trace est retrouvée
+par le lien Garmin : `data/sorties.json` garde, d'une mise à jour à l'autre, la trace OpenRunner connue de chaque
+parcours Garmin dans chaque sens (table `traces`). Le script signale une trace OpenRunner dont la version diffère du calendrier.
