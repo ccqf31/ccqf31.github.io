@@ -203,9 +203,14 @@ h2{font-size:var(--step3);font-weight:800;text-transform:uppercase;letter-spacin
 .hour-facts dd{margin:0}
 .week-note{color:var(--muted);font-size:.95rem;max-width:70ch}
 .tdf-video{position:relative;aspect-ratio:16/9;max-width:56rem;border-radius:10px;overflow:hidden;color:#fff;background:#05301F}
-.tdf-launch{position:absolute;inset:0;display:grid;place-items:center;width:100%;border:0;padding:0;margin:0;color:inherit;font:inherit;text-align:left;cursor:pointer;
+.tdf-launch{position:absolute;inset:0;display:grid;place-items:center;width:100%;border:0;padding:0;margin:0;color:inherit;font:inherit;text-align:left;text-decoration:none;cursor:pointer;
   background:radial-gradient(120% 90% at 85% 10%,rgba(255,212,0,.35),transparent 55%),linear-gradient(135deg,#0A4E34,#007E4E 60%,#05301F)}
 .tdf-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+/* Plein écran : celui du navigateur quand il existe, sinon la vidéo occupe tout l'écran (iPhone) */
+.tdf-video.full{position:fixed;inset:0;z-index:70;max-width:none;aspect-ratio:auto;border-radius:0;background:#000}
+.tdf-full{position:absolute;top:calc(.6rem + env(safe-area-inset-top,0px));right:calc(.6rem + env(safe-area-inset-right,0px));z-index:2;display:inline-flex;align-items:center;gap:.4rem;min-height:40px;padding:.35rem .75rem;border:0;border-radius:6px;background:rgba(0,0,0,.62);color:#fff;font:600 .88rem var(--body);cursor:pointer}
+.tdf-full svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tdf-full:focus-visible{outline:3px solid var(--jaune);outline-offset:2px}
 .tdf-play{display:grid;place-items:center;width:clamp(64px,11vw,96px);aspect-ratio:1;border-radius:50%;background:var(--jaune);color:#10241A;box-shadow:0 8px 28px rgba(0,0,0,.35);transition:transform .2s}
 .tdf-play svg{width:46%;height:46%;margin-left:8%;fill:currentColor}
 .tdf-txt{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;gap:.2rem;padding:1rem 1.2rem;background:linear-gradient(transparent,rgba(0,0,0,.45))}
@@ -800,14 +805,15 @@ img{max-width:100%}
           <p class="sec-sub">Le parcours a été dévoilé le 22 octobre 2026 : départ d’Édimbourg le 2 juillet 2027, arrivée à Paris le 25 juillet.</p>
         </div>
       </div>
-      <!-- Vidéo officielle, diffusée par le lecteur Dailymotion de letour.fr : chargée seulement au clic -->
-      <div class="tdf-video" id="tdf-video" data-video="xbq70d6" data-titre="Découvrez le parcours 2027">
-        <button type="button" class="tdf-launch" aria-label="Lire la vidéo « Découvrez le parcours 2027 »">
+      <!-- Vidéo officielle du Tour de France (Dailymotion xbq70d6). Avec l'identifiant du lecteur Dailymotion du club
+           (data-player), elle se lit dans la page avec un bouton plein écran ; sans, la vignette l'ouvre sur letour.fr -->
+      <div class="tdf-video" id="tdf-video" data-video="xbq70d6" data-player="" data-titre="Découvrez le parcours 2027">
+        <a class="tdf-launch" href="https://www.letour.fr/fr/video/11631/decouvrez-le-parcours-2027" target="_blank" rel="noopener">
           <span class="tdf-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8.5 5.5v13l10.5-6.5z"/></svg></span>
-          <span class="tdf-txt"><b>Découvrez le parcours 2027</b><span>Vidéo officielle du Tour de France</span></span>
-        </button>
+          <span class="tdf-txt"><b>Découvrez le parcours 2027</b><span class="tdf-sous">Vidéo officielle du Tour de France, sur letour.fr ↗</span></span>
+        </a>
       </div>
-      <p class="week-note">Vidéo officielle du Tour de France, diffusée par Dailymotion. Elle est aussi sur <a href="https://www.letour.fr/fr/video/11631/decouvrez-le-parcours-2027" target="_blank" rel="noopener">letour.fr</a>.</p>
+      <p class="week-note">Vidéo officielle du Tour de France, aussi sur <a href="https://www.letour.fr/fr/video/11631/decouvrez-le-parcours-2027" target="_blank" rel="noopener">letour.fr</a>.</p>
     </div>
   </section>
 
@@ -1898,17 +1904,49 @@ img{max-width:100%}
       .catch(function(){meteoAt=0;});
   }
 
-  /* ---------- Tour de France : le lecteur vidéo ne se charge qu'au clic ---------- */
+  /* ---------- Tour de France : avec l'identifiant du lecteur Dailymotion du club, la vidéo se lit dans la page
+     (chargée seulement au clic) avec un bouton plein écran ; sans identifiant, la vignette reste un lien vers letour.fr ---------- */
   (function(){
-    var box=document.getElementById("tdf-video");
-    box.querySelector(".tdf-launch").addEventListener("click",function(){
+    var box=document.getElementById("tdf-video"),lien=box.querySelector(".tdf-launch"),plein=null;
+    if(!box.dataset.player)return;
+    lien.querySelector(".tdf-sous").textContent="Vidéo officielle du Tour de France";
+    lien.setAttribute("role","button");
+    lien.setAttribute("aria-label","Lire la vidéo « "+box.dataset.titre+" »");
+    lien.addEventListener("click",function(ev){
+      ev.preventDefault();
       var f=document.createElement("iframe");
-      f.src="https://geo.dailymotion.com/player.html?video="+encodeURIComponent(box.dataset.video)+"&autoplay=1";
-      f.title=box.dataset.titre+" – vidéo du Tour de France";
-      f.allow="autoplay; fullscreen; picture-in-picture; web-share";
+      f.setAttribute("referrerpolicy","strict-origin-when-cross-origin");   /* Dailymotion vérifie le site d'origine */
+      f.setAttribute("allow","autoplay; fullscreen; picture-in-picture; web-share");
       f.setAttribute("allowfullscreen","");
-      box.innerHTML="";box.appendChild(f);f.focus();
+      f.title=box.dataset.titre+" – vidéo du Tour de France";
+      f.src="https://geo.dailymotion.com/player/"+encodeURIComponent(box.dataset.player)+".html?video="+encodeURIComponent(box.dataset.video);
+      plein=document.createElement("button");
+      plein.type="button";plein.className="tdf-full";
+      plein.addEventListener("click",basculer);
+      box.innerHTML="";box.appendChild(f);box.appendChild(plein);
+      etiquette();f.focus();
     });
+    function enPlein(){return box.classList.contains("full");}
+    function etiquette(){
+      plein.innerHTML=enPlein()
+        ?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg><span>Quitter le plein écran</span>'
+        :'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span>Plein écran</span>';
+    }
+    function basculer(){
+      var on=!enPlein(),fs=document.fullscreenElement||document.webkitFullscreenElement;
+      box.classList.toggle("full",on);
+      document.documentElement.classList.toggle("locked",on);
+      etiquette();
+      if(on){
+        var demande=box.requestFullscreen||box.webkitRequestFullscreen;
+        if(demande){var r=demande.call(box);if(r&&r.catch)r.catch(function(){});}
+      }else if(fs){(document.exitFullscreen||document.webkitExitFullscreen).call(document);}
+    }
+    /* Sortie du plein écran par le navigateur (touche Échap, geste) : la page suit */
+    ["fullscreenchange","webkitfullscreenchange"].forEach(function(n){
+      document.addEventListener(n,function(){if(!(document.fullscreenElement||document.webkitFullscreenElement)&&enPlein())basculer();});
+    });
+    document.addEventListener("keydown",function(ev){if(ev.key==="Escape"&&enPlein())basculer();});
   })();
 
   /* ---------- Données : affichage immédiat, puis relecture de data/sorties.json ---------- */
