@@ -202,15 +202,17 @@ h2{font-size:var(--step3);font-weight:800;text-transform:uppercase;letter-spacin
 .hour-facts dt{font-family:var(--mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-top:.25rem}
 .hour-facts dd{margin:0}
 .week-note{color:var(--muted);font-size:.95rem;max-width:70ch}
-.tdf-video{position:relative;display:grid;place-items:center;aspect-ratio:16/9;max-width:56rem;border-radius:10px;overflow:hidden;color:#fff;text-decoration:none;
+.tdf-video{position:relative;aspect-ratio:16/9;max-width:56rem;border-radius:10px;overflow:hidden;color:#fff;background:#05301F}
+.tdf-launch{position:absolute;inset:0;display:grid;place-items:center;width:100%;border:0;padding:0;margin:0;color:inherit;font:inherit;text-align:left;cursor:pointer;
   background:radial-gradient(120% 90% at 85% 10%,rgba(255,212,0,.35),transparent 55%),linear-gradient(135deg,#0A4E34,#007E4E 60%,#05301F)}
+.tdf-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .tdf-play{display:grid;place-items:center;width:clamp(64px,11vw,96px);aspect-ratio:1;border-radius:50%;background:var(--jaune);color:#10241A;box-shadow:0 8px 28px rgba(0,0,0,.35);transition:transform .2s}
 .tdf-play svg{width:46%;height:46%;margin-left:8%;fill:currentColor}
 .tdf-txt{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;gap:.2rem;padding:1rem 1.2rem;background:linear-gradient(transparent,rgba(0,0,0,.45))}
 .tdf-txt b{font-family:var(--display);font-weight:800;font-size:clamp(1.4rem,3.6vw,2.2rem);text-transform:uppercase;line-height:1}
 .tdf-txt span{font-size:.92rem;opacity:.92}
-@media (hover:hover){.tdf-video:hover .tdf-play{transform:scale(1.08)}}
-.tdf-video:focus-visible{outline:3px solid var(--jaune);outline-offset:3px}
+@media (hover:hover){.tdf-launch:hover .tdf-play{transform:scale(1.08)}}
+.tdf-launch:focus-visible{outline:3px solid var(--jaune);outline-offset:-3px}
 .wx-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
 @media (max-width:720px){.wx-grid{grid-template-columns:minmax(0,1fr)}}
 .wx{display:grid;grid-template-columns:auto minmax(0,1fr);gap:.5rem 1rem;align-items:center;padding:1rem 1.1rem;border:1px solid var(--line);border-top:4px solid var(--jaune);border-radius:8px;background:var(--surface);min-width:0}
@@ -798,11 +800,14 @@ img{max-width:100%}
           <p class="sec-sub">Le parcours a été dévoilé le 22 octobre 2026 : départ d’Édimbourg le 2 juillet 2027, arrivée à Paris le 25 juillet.</p>
         </div>
       </div>
-      <a class="tdf-video" href="https://www.letour.fr/fr/video/11631/decouvrez-le-parcours-2027" target="_blank" rel="noopener">
-        <span class="tdf-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8.5 5.5v13l10.5-6.5z"/></svg></span>
-        <span class="tdf-txt"><b>Découvrez le parcours 2027</b><span>Vidéo officielle du Tour de France, sur letour.fr ↗</span></span>
-      </a>
-      <p class="week-note">La vidéo s’ouvre sur le site officiel du Tour de France.</p>
+      <!-- Vidéo officielle, diffusée par le lecteur Dailymotion de letour.fr : chargée seulement au clic -->
+      <div class="tdf-video" id="tdf-video" data-video="k253OMzhbMcioPLZpOi" data-titre="Découvrez le parcours 2027">
+        <button type="button" class="tdf-launch" aria-label="Lire la vidéo « Découvrez le parcours 2027 »">
+          <span class="tdf-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8.5 5.5v13l10.5-6.5z"/></svg></span>
+          <span class="tdf-txt"><b>Découvrez le parcours 2027</b><span>Vidéo officielle du Tour de France</span></span>
+        </button>
+      </div>
+      <p class="week-note">Vidéo officielle du Tour de France, diffusée par Dailymotion. Elle est aussi sur <a href="https://www.letour.fr/fr/video/11631/decouvrez-le-parcours-2027" target="_blank" rel="noopener">letour.fr</a>.</p>
     </div>
   </section>
 
@@ -1892,6 +1897,19 @@ img{max-width:100%}
       .then(function(d){meteo=d;renderMeteo();})
       .catch(function(){meteoAt=0;});
   }
+
+  /* ---------- Tour de France : le lecteur vidéo ne se charge qu'au clic ---------- */
+  (function(){
+    var box=document.getElementById("tdf-video");
+    box.querySelector(".tdf-launch").addEventListener("click",function(){
+      var f=document.createElement("iframe");
+      f.src="https://geo.dailymotion.com/player.html?video="+encodeURIComponent(box.dataset.video)+"&autoplay=1";
+      f.title=box.dataset.titre+" – vidéo du Tour de France";
+      f.allow="autoplay; fullscreen; picture-in-picture; web-share";
+      f.setAttribute("allowfullscreen","");
+      box.innerHTML="";box.appendChild(f);f.focus();
+    });
+  })();
 
   /* ---------- Données : affichage immédiat, puis relecture de data/sorties.json ---------- */
   var lastLoad=0;
