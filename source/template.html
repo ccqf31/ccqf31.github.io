@@ -200,6 +200,15 @@ h2{font-size:var(--step3);font-weight:800;text-transform:uppercase;letter-spacin
 .tdf-full{position:absolute;top:calc(.6rem + env(safe-area-inset-top,0px));right:calc(.6rem + env(safe-area-inset-right,0px));z-index:2;display:inline-flex;align-items:center;gap:.4rem;min-height:40px;padding:.35rem .75rem;border:0;border-radius:6px;background:rgba(0,0,0,.62);color:#fff;font:600 .88rem var(--body);cursor:pointer}
 .tdf-full svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .tdf-full:focus-visible{outline:3px solid var(--jaune);outline-offset:2px}
+/* Texte lu par les lecteurs d'écran seulement */
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.tdf-etapes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;max-width:56rem}
+@media (max-width:720px){.tdf-etapes{grid-template-columns:minmax(0,1fr)}}
+.tdf-etape{display:flex;flex-direction:column;gap:.5rem;padding:1rem 1.1rem;border:1px solid var(--line);border-top:4px solid var(--jaune);border-radius:8px;background:var(--surface);min-width:0}
+.tdf-when{font-family:var(--mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--vert-text)}
+.tdf-route{font-family:var(--display);font-weight:800;font-size:1.7rem;text-transform:uppercase;line-height:1.05}
+.tdf-facts{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .7rem;font-family:var(--mono);font-size:.9rem;font-variant-numeric:tabular-nums}
+.tdf-lien{margin-top:auto;font-weight:600;color:var(--vert-text)}
 .tdf-play{display:grid;place-items:center;width:clamp(64px,11vw,96px);aspect-ratio:1;border-radius:50%;background:var(--jaune);color:#10241A;box-shadow:0 8px 28px rgba(0,0,0,.35);transition:transform .2s}
 .tdf-play svg{width:46%;height:46%;margin-left:8%;fill:currentColor}
 .tdf-txt{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;gap:.2rem;padding:1rem 1.2rem;background:linear-gradient(transparent,rgba(0,0,0,.45))}
@@ -796,6 +805,24 @@ html.locked{overflow:hidden}
         </a>
       </div>
       <p class="week-note">Vidéo officielle du Tour de France, aussi sur <a href="https://www.letour.fr/fr/video/11631/decouvrez-le-parcours-2027" target="_blank" rel="noopener">letour.fr</a>.</p>
+      <div class="sub-block">
+        <h3 class="h3">Les étapes près de chez nous</h3>
+        <div class="tdf-etapes">
+          <article class="tdf-etape">
+            <p class="tdf-when">Étape 15 · dimanche 18 juillet 2027</p>
+            <p class="tdf-route">Rodez <span aria-hidden="true">›</span><span class="sr-only">à</span> Albi</p>
+            <p class="tdf-facts"><span class="pill">Accidentée</span><span>169 km · 2 500 m D+</span></p>
+            <a class="tdf-lien" href="https://www.letour.fr/fr/etape-15" target="_blank" rel="noopener">Profil et carte officiels sur letour.fr ↗</a>
+          </article>
+          <article class="tdf-etape">
+            <p class="tdf-when">Étape 16 · mardi 20 juillet 2027</p>
+            <p class="tdf-route">Toulouse <span aria-hidden="true">›</span><span class="sr-only">à</span> Toulouse</p>
+            <p class="tdf-facts"><span class="pill">Contre-la-montre individuel</span><span>33 km · 200 m D+</span></p>
+            <a class="tdf-lien" href="https://www.letour.fr/fr/etape-16" target="_blank" rel="noopener">Profil et carte officiels sur letour.fr ↗</a>
+          </article>
+        </div>
+        <p class="week-note">Le Tour reste dans la région : journée de repos à Toulouse le lundi 19 juillet, et départ de Muret le mercredi 21 juillet pour l’étape 17 vers Pau. D’après le parcours officiel présenté le 22 octobre 2026 ; les cartes détaillées des étapes ne sont pas encore publiées sur letour.fr.</p>
+      </div>
     </div>
   </section>
 
