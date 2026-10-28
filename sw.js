@@ -1,5 +1,5 @@
-/* Service worker du CCQF · Cyclo-Club Quint-Fonsegrives, version 1.3.0 */
-const CACHE = "ccqf-1.3.0";
+/* Service worker du CCQF · Cyclo-Club Quint-Fonsegrives, version 1.4.0 */
+const CACHE = "ccqf-1.4.0";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./data/sorties.json",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png"];
 
