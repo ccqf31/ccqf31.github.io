@@ -209,6 +209,9 @@ h2{font-size:var(--step3);font-weight:800;text-transform:uppercase;letter-spacin
 .tdf-route{font-family:var(--display);font-weight:800;font-size:1.7rem;text-transform:uppercase;line-height:1.05}
 .tdf-facts{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .7rem;font-family:var(--mono);font-size:.9rem;font-variant-numeric:tabular-nums}
 .tdf-lien{margin-top:auto;font-weight:600;color:var(--vert-text)}
+.stores.tdf-stores{grid-template-columns:repeat(2,minmax(0,1fr));max-width:56rem}
+@media (max-width:720px){.stores.tdf-stores{grid-template-columns:minmax(0,1fr)}}
+a.store{text-decoration:none}
 /* Profils officiels des étapes (images fournies par le club, dossier tour/), avec leur mention de droits */
 .tdf-profil{margin:0;display:flex;flex-direction:column;gap:.3rem}
 .tdf-zoom{display:block;width:100%;padding:0;border-radius:6px;overflow:hidden;background:#fff;border:1px solid var(--line);cursor:zoom-in}
@@ -847,6 +850,22 @@ html.locked{overflow:hidden}
           </article>
         </div>
         <p class="week-note">Le Tour reste dans la région : journée de repos à Toulouse le lundi 19 juillet, et départ de Muret le mercredi 21 juillet pour l’étape 17 vers Pau. D’après le parcours officiel présenté le 22 octobre 2026 ; les cartes détaillées des étapes ne sont pas encore publiées sur letour.fr.</p>
+      </div>
+      <div class="sub-block">
+        <h3 class="h3">L’application officielle du Tour</h3>
+        <p class="week-note">Pour suivre la course en temps réel et toutes les étapes en direct, d’après letour.fr. Elle est éditée par A.S.O., l’organisateur du Tour de France.</p>
+        <div class="stores tdf-stores">
+          <a class="store" href="https://play.google.com/store/apps/details?id=com.aso.tdf2012int" target="_blank" rel="noopener">
+            <span class="store-logo android">__ANDROID__</span>
+            <span class="store-text"><small>Google Play</small><b>Télécharger sur Android</b></span>
+            <svg class="store-go" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>
+          </a>
+          <a class="store" href="https://apps.apple.com/app/id1528742741" target="_blank" rel="noopener">
+            <span class="store-logo apple">__APPLE__</span>
+            <span class="store-text"><small>App Store</small><b>Télécharger sur iPhone</b></span>
+            <svg class="store-go" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>
+          </a>
+        </div>
       </div>
     </div>
   </section>
