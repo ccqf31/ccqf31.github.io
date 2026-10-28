@@ -220,7 +220,7 @@ h2{font-size:var(--step3);font-weight:800;text-transform:uppercase;letter-spacin
 .tdf-route{font-family:var(--display);font-weight:800;font-size:1.7rem;text-transform:uppercase;line-height:1.05}
 .tdf-facts{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .7rem;font-family:var(--mono);font-size:.9rem;font-variant-numeric:tabular-nums}
 .tdf-lien{margin-top:auto;font-weight:600;color:var(--vert-text)}
-/* Profils officiels affichés depuis le site du Tour (non copiés), avec leur mention de droits */
+/* Profils officiels des étapes (images fournies par le club, dossier tour/), avec leur mention de droits */
 .tdf-profil{margin:0;display:flex;flex-direction:column;gap:.3rem}
 .tdf-profil a{display:block;border-radius:6px;overflow:hidden;background:#fff;border:1px solid var(--line)}
 .tdf-profil img{display:block;width:100%;height:auto}
@@ -846,8 +846,8 @@ img{max-width:100%}
             <p class="tdf-route">Toulouse <span aria-hidden="true">›</span><span class="sr-only">à</span> Toulouse</p>
             <p class="tdf-facts"><span class="pill">Contre-la-montre individuel</span><span>33 km · 200 m D+</span></p>
             <figure class="tdf-profil">
-              <a href="https://www.letour.fr/fr/etape-16" target="_blank" rel="noopener"><img src="https://img.aso.fr/core_app/img-cycling-tdf-jpg/16/76693/0:0,519:424-960-0-90/393d7" width="960" height="784" alt="Profil de l’étape 16, contre-la-montre à Toulouse" loading="lazy" decoding="async"></a>
-              <figcaption>Profil officiel · © A.S.O. – Tour de France</figcaption>
+              <a href="https://www.letour.fr/fr/etape-16" target="_blank" rel="noopener"><img src="tour/etape-16-profil.webp" width="2000" height="1528" alt="Profil de l’étape 16, contre-la-montre de 33 km : départ de Toulouse (140 m), Portet-sur-Garonne (km 6), Pinsaguel (km 11), Lacroix-Falgarde (km 15), côte de Pech David (km 24, 249 m, 800 m à 12,4 %), Toulouse-Empalot (km 26), arrivée à Toulouse (142 m)" loading="lazy" decoding="async"></a>
+              <figcaption>Profil de l’étape · © A.S.O. – Tour de France</figcaption>
             </figure>
             <a class="tdf-lien" href="https://www.letour.fr/fr/etape-16" target="_blank" rel="noopener">Profil et carte officiels sur letour.fr ↗</a>
           </article>
@@ -1988,13 +1988,6 @@ img{max-width:100%}
     });
     document.addEventListener("keydown",function(ev){if(ev.key==="Escape"&&enPlein())basculer();});
   })();
-
-  /* Profils officiels du Tour : si le site du Tour ne fournit pas l'image, on la retire (le lien reste) */
-  document.querySelectorAll(".tdf-profil img").forEach(function(img){
-    function retirer(){img.closest(".tdf-profil").hidden=true;}
-    if(img.complete&&!img.naturalWidth&&img.currentSrc)retirer();
-    img.addEventListener("error",retirer);
-  });
 
   /* ---------- Données : affichage immédiat, puis relecture de data/sorties.json ---------- */
   var lastLoad=0;
