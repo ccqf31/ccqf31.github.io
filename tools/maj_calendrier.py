@@ -36,6 +36,7 @@ OPENRUNNER_PAGE = "https://www.openrunner.com/route-details/{}"
 TZ = ZoneInfo("Europe/Paris")
 NB_SORTIES = 4                                   # sorties du dimanche détaillées dans la page
 JOURS_A_VENIR = 60                               # fenêtre de la liste des événements à venir
+DEJA_PARTIES = datetime.timedelta(hours=4)       # sorties en cours gardées dans la liste (météo de la sortie du jour)
 HISTORIQUE = datetime.timedelta(days=3 * 365)    # sorties passées relues pour retrouver les traces OpenRunner
 PROGRAMME = datetime.timedelta(days=365)         # bibliothèque : les parcours au programme des 12 prochains mois
 SORTIE = Path(__file__).resolve().parent.parent / "data" / "sorties.json"
@@ -387,8 +388,10 @@ def construire(ics, maintenant, ancien=None):
                 traces.pop(garmin.group(1) + cle[3], None)
 
     # Événements à venir
-    a_venir = [e for e in evenements if maintenant <= e["debut"] <= maintenant + datetime.timedelta(days=JOURS_A_VENIR)]
-    dimanches = [e for e in a_venir if e["debut"].weekday() == 6 and NUMERO.search(e["titre"])][:NB_SORTIES]
+    a_venir = [e for e in evenements
+               if maintenant - DEJA_PARTIES <= e["debut"] <= maintenant + datetime.timedelta(days=JOURS_A_VENIR)]
+    dimanches = [e for e in a_venir
+                 if e["debut"] >= maintenant and e["debut"].weekday() == 6 and NUMERO.search(e["titre"])][:NB_SORTIES]
 
     # Détails OpenRunner des prochaines sorties du dimanche, avec la trace vérifiée de la bibliothèque
     profils = {}

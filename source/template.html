@@ -670,7 +670,7 @@ html.locked{overflow:hidden}
       <div class="sub-block" id="meteo" hidden>
         <h3 class="h3">La météo des sorties de la semaine</h3>
         <div class="wx-grid" id="wx-grid"></div>
-        <p class="cal-help">Prévisions <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> au départ de la mairie, d’après les modèles de Météo-France et d’autres services météo, sur les 3 heures qui suivent le départ. Elles sont relues à chaque ouverture de la page.</p>
+        <p class="cal-help">Les sorties de la semaine en cours, du lundi au dimanche. Prévisions <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> au départ de la mairie, d’après les modèles de Météo-France et d’autres services météo, sur les 3 heures qui suivent le départ. Elles sont relues à chaque ouverture de la page.</p>
       </div>
       <div class="sub-block" id="calendrier">
         <h3 class="h3">Le calendrier des sorties</h3>
@@ -1788,11 +1788,16 @@ html.locked{overflow:hidden}
   var VENT=["du nord","de nord-est","d’est","de sud-est","du sud","de sud-ouest","d’ouest","de nord-ouest"];
   function ventDe(deg,kmh){var i=Math.round(deg/45)%8;return VENT[i]+(i===3&&kmh>=20?" (autan)":"");}
   function dec1(x){return String(Math.round(x*10)/10).replace(".",",");}
-  /* La prochaine sortie du mercredi et celle du dimanche, dans les 7 jours de prévisions */
+  /* Les sorties du mercredi et du dimanche de la semaine en cours (du lundi au dimanche), jusqu'à leur retour :
+     jamais celles de la semaine suivante, trop éloignées pour une prévision fiable */
   function weekRides(){
-    return [3,0].map(function(day){
-      return rides.filter(function(e){return e.date.getDay()===day&&e.date-now<7*864e5;})[0];
-    }).filter(Boolean).sort(function(a,b){return a.date-b.date;});
+    var lundi=dayStart(now);lundi.setDate(lundi.getDate()-(lundi.getDay()+6)%7);
+    var dimanche=new Date(lundi);dimanche.setDate(lundi.getDate()+7);
+    var semaine=DATA.up.map(function(e){return {t:e.t,nom:e.nom,date:parse(e.d)};}).filter(function(e){
+      return !isChange(e)&&e.date>=lundi&&e.date<dimanche&&e.date.getTime()+METEO_HEURES*36e5>now.getTime();
+    });
+    return [3,0].map(function(day){return semaine.filter(function(e){return e.date.getDay()===day;})[0];})
+      .filter(Boolean).sort(function(a,b){return a.date-b.date;});
   }
   function wxCard(e){
     var H=meteo.hourly,idx=[],d=e.date;
