@@ -54,3 +54,11 @@ L'aperçu de chaque tracé nomme ses principaux villages : d'abord les communes 
 puis les plus peuplées parmi celles dont la mairie est à moins de 600 m du tracé. La liste des communes
 (Haute-Garonne et départements voisins, avec la position de leur mairie) est gardée dans `tools/communes.json`,
 lue une fois sur geo.api.gouv.fr : supprimer ce fichier pour la relire.
+
+## Météo des sorties de la semaine
+
+La page affiche la météo des sorties du mercredi et du dimanche de la semaine en cours (du lundi au dimanche),
+jamais celles de la semaine suivante. Chaque sortie reste affichée jusqu'à son retour, 3 heures après le départ.
+Les prévisions viennent d'[Open-Meteo](https://open-meteo.com/) (modèles de Météo-France et autres), demandées par le
+navigateur du visiteur à chaque ouverture de la page ; sans réponse, le bloc reste masqué. Pour que la sortie du jour
+reste dans la liste, `tools/maj_calendrier.py` garde les sorties parties depuis moins de 4 heures.

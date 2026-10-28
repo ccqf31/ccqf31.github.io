@@ -189,6 +189,18 @@ h2{font-size:var(--step3);font-weight:800;text-transform:uppercase;letter-spacin
 .hour-facts dt{font-family:var(--mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-top:.25rem}
 .hour-facts dd{margin:0}
 .week-note{color:var(--muted);font-size:.95rem;max-width:70ch}
+.wx-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+@media (max-width:720px){.wx-grid{grid-template-columns:minmax(0,1fr)}}
+.wx{display:grid;grid-template-columns:auto minmax(0,1fr);gap:.5rem 1rem;align-items:center;padding:1rem 1.1rem;border:1px solid var(--line);border-top:4px solid var(--jaune);border-radius:8px;background:var(--surface);min-width:0}
+.wx-ico{grid-row:span 2;width:58px;height:58px;color:var(--vert-text)}
+.wx-ico svg{display:block;width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.wx-when{font-family:var(--mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--vert-text)}
+.wx-what{font-weight:600}
+.wx-sky{font-family:var(--display);font-weight:800;font-size:1.55rem;text-transform:uppercase;line-height:1.05}
+.wx-facts{grid-column:1/-1;display:grid;grid-template-columns:auto minmax(0,1fr);gap:.3rem .9rem;margin:0}
+.wx-facts dt{font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:.2rem}
+.wx-facts dd{margin:0;font-variant-numeric:tabular-nums}
+.wx-alerts{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:.35rem}
 
 .cal{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:1.5rem clamp(2rem,5vw,4rem);align-items:start}
 @media (max-width:820px){.cal{grid-template-columns:minmax(0,1fr)}}
@@ -655,6 +667,11 @@ html.locked{overflow:hidden}
         <p class="week-note">Les dates exactes des changements d’horaire sont annoncées dans le calendrier de la section.</p>
       </div>
 
+      <div class="sub-block" id="meteo" hidden>
+        <h3 class="h3">La météo des sorties de la semaine</h3>
+        <div class="wx-grid" id="wx-grid"></div>
+        <p class="cal-help">Les sorties de la semaine en cours, du lundi au dimanche. Prévisions <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> au départ de la mairie, d’après les modèles de Météo-France et d’autres services météo, sur les 3 heures qui suivent le départ. Elles sont relues à chaque ouverture de la page.</p>
+      </div>
       <div class="sub-block" id="calendrier">
         <h3 class="h3">Le calendrier des sorties</h3>
         <div class="cal">
@@ -1738,11 +1755,102 @@ html.locked{overflow:hidden}
     });
   })();
 
+  /* ---------- Météo des deux sorties de la semaine (mercredi et dimanche), au départ de la mairie ---------- */
+  var METEO_URL="https://api.open-meteo.com/v1/forecast?latitude=43.5853&longitude=1.5303&timezone=Europe%2FParis&forecast_days=8"+
+    "&hourly=temperature_2m,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m";
+  var METEO_HEURES=3,meteo=null,meteoAt=0;   /* prévision sur les 3 heures qui suivent le départ */
+  var WX_CLOUD='<path d="M7 14h10a3.5 3.5 0 0 0 .3-7A5 5 0 0 0 7.7 8 3 3 0 0 0 7 14z"/>';
+  var WX_ICON={
+    sun:'<circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/>',
+    partly:'<circle cx="8" cy="8" r="3"/><path d="M8 2.6v1.2M2.6 8h1.2M4.2 4.2l.9.9M11.8 4.2l-.9.9"/><path d="M9.5 20h8a3.5 3.5 0 0 0 .3-7 5 5 0 0 0-9.6 1.1A3 3 0 0 0 9.5 20z"/>',
+    cloud:'<path d="M7 18.5h10a4 4 0 0 0 .4-8 5.5 5.5 0 0 0-10.6 1.2A3.4 3.4 0 0 0 7 18.5z"/>',
+    fog:WX_CLOUD+'<path d="M4 17.5h16M6.5 21h11"/>',
+    rain:WX_CLOUD+'<path d="M8.5 17l-1 3M12.5 17l-1 3M16.5 17l-1 3"/>',
+    snow:WX_CLOUD+'<path d="M8.5 18h.01M12.5 19.5h.01M16.5 18h.01M10.5 21.5h.01M14.5 21.5h.01" stroke-width="2.6"/>',
+    storm:WX_CLOUD+'<path d="M12.8 15l-2.3 3.5h3l-2.3 3.5"/>'
+  };
+  /* Codes météo de l'OMM, du plus clément au plus rude */
+  function wxSky(c){
+    if(c===0)return ["Ciel dégagé","sun"];
+    if(c===1)return ["Peu nuageux","partly"];
+    if(c===2)return ["Éclaircies","partly"];
+    if(c===3)return ["Couvert","cloud"];
+    if(c===45||c===48)return ["Brouillard","fog"];
+    if(c>=51&&c<=57)return ["Bruine","rain"];
+    if(c>=61&&c<=67)return [c===61?"Pluie faible":c===65?"Forte pluie":"Pluie","rain"];
+    if(c>=71&&c<=77)return ["Neige","snow"];
+    if(c>=80&&c<=82)return ["Averses","rain"];
+    if(c===85||c===86)return ["Averses de neige","snow"];
+    if(c>=95)return [c===95?"Orages":"Orages et grêle","storm"];
+    return ["Nuageux","cloud"];
+  }
+  /* Vent de sud-est : l'autan, quand il souffle vraiment */
+  var VENT=["du nord","de nord-est","d’est","de sud-est","du sud","de sud-ouest","d’ouest","de nord-ouest"];
+  function ventDe(deg,kmh){var i=Math.round(deg/45)%8;return VENT[i]+(i===3&&kmh>=20?" (autan)":"");}
+  function dec1(x){return String(Math.round(x*10)/10).replace(".",",");}
+  /* Les sorties du mercredi et du dimanche de la semaine en cours (du lundi au dimanche), jusqu'à leur retour :
+     jamais celles de la semaine suivante, trop éloignées pour une prévision fiable */
+  function weekRides(){
+    var lundi=dayStart(now);lundi.setDate(lundi.getDate()-(lundi.getDay()+6)%7);
+    var dimanche=new Date(lundi);dimanche.setDate(lundi.getDate()+7);
+    var semaine=DATA.up.map(function(e){return {t:e.t,nom:e.nom,date:parse(e.d)};}).filter(function(e){
+      return !isChange(e)&&e.date>=lundi&&e.date<dimanche&&e.date.getTime()+METEO_HEURES*36e5>now.getTime();
+    });
+    return [3,0].map(function(day){return semaine.filter(function(e){return e.date.getDay()===day;})[0];})
+      .filter(Boolean).sort(function(a,b){return a.date-b.date;});
+  }
+  function wxCard(e){
+    var H=meteo.hourly,idx=[],d=e.date;
+    for(var k=0;k<=METEO_HEURES;k++){
+      var t=new Date(d.getFullYear(),d.getMonth(),d.getDate(),d.getHours()+k);
+      var i=H.time.indexOf(t.getFullYear()+"-"+pad(t.getMonth()+1)+"-"+pad(t.getDate())+"T"+pad(t.getHours())+":00");
+      if(i>=0)idx.push(i);
+    }
+    function serie(n){return idx.map(function(i){return H[n]?H[n][i]:null;}).filter(function(v){return v!=null;});}
+    var temp=serie("temperature_2m"),vit=serie("wind_speed_10m"),raf=serie("wind_gusts_10m"),code=serie("weather_code");
+    if(temp.length<2||!vit.length||!code.length)return "";
+    var dir=serie("wind_direction_10m"),proba=serie("precipitation_probability"),mm=serie("precipitation");
+    var sky=wxSky(Math.max.apply(null,code)),tmin=Math.min.apply(null,temp);
+    var vent=Math.round(vit.reduce(function(a,b){return a+b;},0)/vit.length),rafale=raf.length?Math.round(Math.max.apply(null,raf)):null;
+    var pluieP=proba.length?Math.max.apply(null,proba):null,pluieMm=mm.reduce(function(a,b){return a+b;},0);
+    var pluie=pluieMm<0.1&&(pluieP===null||pluieP<20)?"Pas de pluie prévue"
+      :(pluieP!==null?pluieP+"\u00a0% de risque":"")+(pluieP!==null&&pluieMm>=0.1?" · ":"")+(pluieMm>=0.1?dec1(pluieMm)+"\u00a0mm":"");
+    var alertes=[];
+    if(code.some(function(c){return c>=95;}))alertes.push("Orages");
+    if((pluieP!==null&&pluieP>=50)||pluieMm>=1)alertes.push("Pluie probable");
+    if(rafale!==null&&rafale>=50)alertes.push("Rafales fortes");else if(vent>=30)alertes.push("Vent fort");
+    if(tmin<=3)alertes.push("Froid");
+    return '<article class="wx"><span class="wx-ico" aria-hidden="true"><svg viewBox="0 0 24 24">'+WX_ICON[sky[1]]+'</svg></span>'+
+      '<div><p class="wx-when">'+cap(dateFr(e.date))+' · '+hm(e.date)+'</p><p class="wx-what">'+esc(rideTitle(e))+'</p></div>'+
+      '<p class="wx-sky">'+sky[0]+'</p>'+
+      '<dl class="wx-facts"><dt>Température</dt><dd>'+Math.round(temp[0])+'° au départ, '+Math.round(temp[temp.length-1])+'° au retour</dd>'+
+      '<dt>Vent</dt><dd>'+vent+'\u00a0km/h'+(dir.length?' '+ventDe(dir[Math.floor(dir.length/2)],vent):'')+
+        (rafale!==null?', rafales '+rafale+'\u00a0km/h':'')+'</dd>'+
+      '<dt>Pluie</dt><dd>'+pluie+'</dd></dl>'+
+      (alertes.length?'<div class="wx-alerts">'+alertes.map(function(a){return '<span class="pill">'+a+'</span>';}).join("")+'</div>':'')+
+      '</article>';
+  }
+  function renderMeteo(){
+    var box=document.getElementById("meteo");
+    var cartes=meteo&&meteo.hourly&&meteo.hourly.time?weekRides().map(wxCard).filter(Boolean):[];
+    document.getElementById("wx-grid").innerHTML=cartes.join("");
+    box.hidden=!cartes.length;
+  }
+  /* Prévisions relues au plus toutes les 30 minutes ; sans réseau, le bloc reste masqué */
+  function loadMeteo(){
+    if(!window.fetch||Date.now()-meteoAt<30*6e4)return;
+    meteoAt=Date.now();
+    fetch(METEO_URL)
+      .then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
+      .then(function(d){meteo=d;renderMeteo();})
+      .catch(function(){meteoAt=0;});
+  }
+
   /* ---------- Données : affichage immédiat, puis relecture de data/sorties.json ---------- */
   var lastLoad=0;
   function applyData(d){
     DATA=d;PROF_CACHE={};LIB_CACHE={};
-    renderSorties();buildLoops();renderLib();setupStage();
+    renderSorties();buildLoops();renderLib();setupStage();renderMeteo();loadMeteo();
   }
   function refresh(){
     if(!window.fetch||location.protocol==="file:")return;
