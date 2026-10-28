@@ -17,7 +17,7 @@ import json
 import re
 from pathlib import Path
 
-VERSION = "1.5.1"
+VERSION = "1.5.2"
 DATE = "28 octobre 2026"     # date affichée avec la version, dans la section « Application mobile »
 
 RACINE = Path(__file__).resolve().parent.parent
@@ -152,8 +152,11 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET" || new URL(request.url).origin !== self.location.origin) return;
+  // Toujours revalider auprès du serveur (GitHub Pages autorise 10 minutes de cache) :
+  // une nouvelle version du site s'affiche dès sa publication
+  const reseau = request.mode === "navigate" ? fetch(request.url, { cache: "no-cache" }) : fetch(request, { cache: "no-cache" });
   event.respondWith(
-    fetch(request)
+    reseau
       .then((response) => {
         const copy = response.clone();
         caches.open(CACHE).then((cache) => cache.put(request, copy));
