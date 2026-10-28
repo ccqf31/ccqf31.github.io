@@ -209,6 +209,11 @@ h2{font-size:var(--step3);font-weight:800;text-transform:uppercase;letter-spacin
 .tdf-route{font-family:var(--display);font-weight:800;font-size:1.7rem;text-transform:uppercase;line-height:1.05}
 .tdf-facts{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .7rem;font-family:var(--mono);font-size:.9rem;font-variant-numeric:tabular-nums}
 .tdf-lien{margin-top:auto;font-weight:600;color:var(--vert-text)}
+/* Profils officiels affichés depuis le site du Tour (non copiés), avec leur mention de droits */
+.tdf-profil{margin:0;display:flex;flex-direction:column;gap:.3rem}
+.tdf-profil a{display:block;border-radius:6px;overflow:hidden;background:#fff;border:1px solid var(--line)}
+.tdf-profil img{display:block;width:100%;height:auto}
+.tdf-profil figcaption{font-size:.78rem;color:var(--muted)}
 .tdf-play{display:grid;place-items:center;width:clamp(64px,11vw,96px);aspect-ratio:1;border-radius:50%;background:var(--jaune);color:#10241A;box-shadow:0 8px 28px rgba(0,0,0,.35);transition:transform .2s}
 .tdf-play svg{width:46%;height:46%;margin-left:8%;fill:currentColor}
 .tdf-txt{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;gap:.2rem;padding:1rem 1.2rem;background:linear-gradient(transparent,rgba(0,0,0,.45))}
@@ -812,12 +817,20 @@ html.locked{overflow:hidden}
             <p class="tdf-when">Étape 15 · dimanche 18 juillet 2027</p>
             <p class="tdf-route">Rodez <span aria-hidden="true">›</span><span class="sr-only">à</span> Albi</p>
             <p class="tdf-facts"><span class="pill">Accidentée</span><span>169 km · 2 500 m D+</span></p>
+            <figure class="tdf-profil">
+              <a href="https://www.letour.fr/fr/etape-15" target="_blank" rel="noopener"><img src="https://img.aso.fr/core_app/img-cycling-tdf-jpg/et15-pg-sous-reserves/77245/0:0,801:441-960-0-90/74b27" width="960" height="529" alt="Profil de l’étape 15, Rodez › Albi" loading="lazy" decoding="async"></a>
+              <figcaption>Profil provisoire, sous réserves · © A.S.O. – Tour de France</figcaption>
+            </figure>
             <a class="tdf-lien" href="https://www.letour.fr/fr/etape-15" target="_blank" rel="noopener">Profil et carte officiels sur letour.fr ↗</a>
           </article>
           <article class="tdf-etape">
             <p class="tdf-when">Étape 16 · mardi 20 juillet 2027</p>
             <p class="tdf-route">Toulouse <span aria-hidden="true">›</span><span class="sr-only">à</span> Toulouse</p>
             <p class="tdf-facts"><span class="pill">Contre-la-montre individuel</span><span>33 km · 200 m D+</span></p>
+            <figure class="tdf-profil">
+              <a href="https://www.letour.fr/fr/etape-16" target="_blank" rel="noopener"><img src="https://img.aso.fr/core_app/img-cycling-tdf-jpg/16/76693/0:0,519:424-960-0-90/393d7" width="960" height="784" alt="Profil de l’étape 16, contre-la-montre à Toulouse" loading="lazy" decoding="async"></a>
+              <figcaption>Profil officiel · © A.S.O. – Tour de France</figcaption>
+            </figure>
             <a class="tdf-lien" href="https://www.letour.fr/fr/etape-16" target="_blank" rel="noopener">Profil et carte officiels sur letour.fr ↗</a>
           </article>
         </div>
@@ -1957,6 +1970,13 @@ html.locked{overflow:hidden}
     });
     document.addEventListener("keydown",function(ev){if(ev.key==="Escape"&&enPlein())basculer();});
   })();
+
+  /* Profils officiels du Tour : si le site du Tour ne fournit pas l'image, on la retire (le lien reste) */
+  document.querySelectorAll(".tdf-profil img").forEach(function(img){
+    function retirer(){img.closest(".tdf-profil").hidden=true;}
+    if(img.complete&&!img.naturalWidth&&img.currentSrc)retirer();
+    img.addEventListener("error",retirer);
+  });
 
   /* ---------- Données : affichage immédiat, puis relecture de data/sorties.json ---------- */
   var lastLoad=0;
