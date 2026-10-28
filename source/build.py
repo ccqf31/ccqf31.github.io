@@ -213,6 +213,8 @@ def main():
         integrees = [dict(p, m="data:image/jpeg;base64," + jpeg_classique(PHOTOS_WEB / "mini" / p["f"]), w=p["mw"], h=p["mh"])
                      for p in photos]
         apercu = assembler(integrees, differe=False)
+        # Images de la section Tour de France (dossier tour/) intégrées elles aussi dans la copie autonome
+        apercu = re.sub(r'src="(tour/[^"]+)"', lambda m: f'src="data:image/{Path(m.group(1)).suffix[1:]};base64,{b64(RACINE / m.group(1))}"', apercu)
         Path(args.apercu).write_text(apercu, encoding="utf-8")
         print(f"Aperçu autonome : {args.apercu} ({len(apercu.encode()) // 1024} Ko)")
 
