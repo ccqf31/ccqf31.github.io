@@ -75,6 +75,8 @@ a{color:inherit}
 /* En-tête */
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--vert);color:var(--on-vert);border-bottom:1px solid var(--vert-line)}
 .top-in{display:flex;align-items:center;justify-content:space-between;gap:1rem;min-height:64px;padding-block:.5rem}
+/* L'en-tête peut être plus large que le contenu : le nom du club et le menu complet tiennent côte à côte */
+.wrap.top-in{max-width:1440px}
 .brand{display:flex;align-items:center;gap:.75rem;text-decoration:none;font-family:var(--display);font-weight:800;text-transform:uppercase;letter-spacing:.03em;line-height:.95;font-size:1.75rem;min-width:0}
 .brand small{display:block;font-weight:600;color:var(--on-vert-muted);letter-spacing:.08em;font-size:.78rem;margin-top:.2rem}
 .logo-tile{flex:none;display:grid;place-items:center;background:var(--logo-bg);border-radius:6px;padding:4px 6px;line-height:0}
@@ -85,7 +87,7 @@ a{color:inherit}
 @media (max-width:1400px){.nav a{padding:.4rem .5rem;letter-spacing:.045em}}
 .menu-btn{display:none;align-items:center;gap:.5rem;min-height:44px;font:700 1rem var(--display);text-transform:uppercase;letter-spacing:.06em;color:var(--on-vert);background:transparent;border:1px solid var(--vert-line);border-radius:4px;padding:.45rem .9rem;cursor:pointer;flex:none}
 .menu-btn i{display:block;width:16px;height:2px;background:currentColor;box-shadow:0 5px 0 currentColor,0 -5px 0 currentColor}
-@media (max-width:1200px){
+@media (max-width:1260px){
   .menu-btn{display:inline-flex}
   .nav{display:none;position:absolute;left:0;right:0;top:100%;flex-direction:column;gap:0;background:var(--vert);border-bottom:1px solid var(--vert-line);padding-block:.25rem 1rem;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-height:calc(100dvh - 80px);overflow-y:auto;overscroll-behavior:contain}
   .top.open .nav{display:flex}
@@ -189,6 +191,15 @@ h2{font-size:var(--step3);font-weight:800;text-transform:uppercase;letter-spacin
 .hour-facts dt{font-family:var(--mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-top:.25rem}
 .hour-facts dd{margin:0}
 .week-note{color:var(--muted);font-size:.95rem;max-width:70ch}
+.tdf-video{position:relative;display:grid;place-items:center;aspect-ratio:16/9;max-width:56rem;border-radius:10px;overflow:hidden;color:#fff;text-decoration:none;
+  background:radial-gradient(120% 90% at 85% 10%,rgba(255,212,0,.35),transparent 55%),linear-gradient(135deg,#0A4E34,#007E4E 60%,#05301F)}
+.tdf-play{display:grid;place-items:center;width:clamp(64px,11vw,96px);aspect-ratio:1;border-radius:50%;background:var(--jaune);color:#10241A;box-shadow:0 8px 28px rgba(0,0,0,.35);transition:transform .2s}
+.tdf-play svg{width:46%;height:46%;margin-left:8%;fill:currentColor}
+.tdf-txt{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;gap:.2rem;padding:1rem 1.2rem;background:linear-gradient(transparent,rgba(0,0,0,.45))}
+.tdf-txt b{font-family:var(--display);font-weight:800;font-size:clamp(1.4rem,3.6vw,2.2rem);text-transform:uppercase;line-height:1}
+.tdf-txt span{font-size:.92rem;opacity:.92}
+@media (hover:hover){.tdf-video:hover .tdf-play{transform:scale(1.08)}}
+.tdf-video:focus-visible{outline:3px solid var(--jaune);outline-offset:3px}
 .wx-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
 @media (max-width:720px){.wx-grid{grid-template-columns:minmax(0,1fr)}}
 .wx{display:grid;grid-template-columns:auto minmax(0,1fr);gap:.5rem 1rem;align-items:center;padding:1rem 1.1rem;border:1px solid var(--line);border-top:4px solid var(--jaune);border-radius:8px;background:var(--surface);min-width:0}
@@ -556,6 +567,7 @@ html.locked{overflow:hidden}
       <a href="#sorties">Sorties</a>
       <a href="#parcours">Parcours</a>
       <a href="#saison">Saison</a>
+      <a href="#tour">Tour de France</a>
       <a href="#photos">Photos</a>
       <a href="#adhesion">Adhésion</a>
       <a href="#maillot">Commande maillot club</a>
@@ -756,6 +768,23 @@ html.locked{overflow:hidden}
         <li><span class="month">Été</span><h3>Une étape du Tour</h3><p>En 2025 puis en 2026, une partie de l’étape 11 du Tour de France 2025, autour de Toulouse.</p></li>
         <li><span class="month">Septembre</span><h3>La Saint-O</h3><p>La randonnée de Saint-Orens, rendez-vous de rentrée de la section.</p></li>
       </ol>
+    </div>
+  </section>
+
+  <section class="section" id="tour">
+    <div class="wrap stack">
+      <div class="sec-head">
+        <div>
+          <p class="kicker">Tour de France</p>
+          <h2>Le Tour de France 2027</h2>
+          <p class="sec-sub">Le parcours a été dévoilé le 22 octobre 2026 : départ d’Édimbourg le 2 juillet 2027, arrivée à Paris le 25 juillet.</p>
+        </div>
+      </div>
+      <a class="tdf-video" href="https://www.letour.fr/fr/video/11631/decouvrez-le-parcours-2027" target="_blank" rel="noopener">
+        <span class="tdf-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8.5 5.5v13l10.5-6.5z"/></svg></span>
+        <span class="tdf-txt"><b>Découvrez le parcours 2027</b><span>Vidéo officielle du Tour de France, sur letour.fr ↗</span></span>
+      </a>
+      <p class="week-note">La vidéo s’ouvre sur le site officiel du Tour de France.</p>
     </div>
   </section>
 
