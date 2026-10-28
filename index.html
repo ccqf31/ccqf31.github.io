@@ -211,6 +211,35 @@ h2{font-size:var(--step3);font-weight:800;text-transform:uppercase;letter-spacin
 .tdf-full{position:absolute;top:calc(.6rem + env(safe-area-inset-top,0px));right:calc(.6rem + env(safe-area-inset-right,0px));z-index:2;display:inline-flex;align-items:center;gap:.4rem;min-height:40px;padding:.35rem .75rem;border:0;border-radius:6px;background:rgba(0,0,0,.62);color:#fff;font:600 .88rem var(--body);cursor:pointer}
 .tdf-full svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .tdf-full:focus-visible{outline:3px solid var(--jaune);outline-offset:2px}
+/* Texte lu par les lecteurs d'écran seulement */
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.tdf-etapes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;max-width:56rem}
+@media (max-width:720px){.tdf-etapes{grid-template-columns:minmax(0,1fr)}}
+.tdf-etape{display:flex;flex-direction:column;gap:.5rem;padding:1rem 1.1rem;border:1px solid var(--line);border-top:4px solid var(--jaune);border-radius:8px;background:var(--surface);min-width:0}
+.tdf-when{font-family:var(--mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--vert-text)}
+.tdf-route{font-family:var(--display);font-weight:800;font-size:1.7rem;text-transform:uppercase;line-height:1.05}
+.tdf-facts{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .7rem;font-family:var(--mono);font-size:.9rem;font-variant-numeric:tabular-nums}
+.tdf-lien{margin-top:auto;font-weight:600;color:var(--vert-text)}
+.stores.tdf-stores{grid-template-columns:repeat(2,minmax(0,1fr));max-width:56rem}
+@media (max-width:720px){.stores.tdf-stores{grid-template-columns:minmax(0,1fr)}}
+a.store{text-decoration:none}
+/* Profils officiels des étapes (images fournies par le club, dossier tour/), avec leur mention de droits */
+.tdf-profil{margin:0;display:flex;flex-direction:column;gap:.3rem}
+.tdf-zoom{display:block;width:100%;padding:0;border-radius:6px;overflow:hidden;background:#fff;border:1px solid var(--line);cursor:zoom-in}
+.tdf-zoom:focus-visible{outline:3px solid var(--jaune);outline-offset:2px}
+/* Profil agrandi : sur un téléphone tenu verticalement, toute la hauteur de l'écran et on le parcourt du doigt */
+.zoom{position:fixed;inset:0;z-index:80;display:flex;flex-direction:column;background:#07130D;color:#fff;
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+.zoom-bar{display:flex;align-items:center;gap:.9rem;padding:.6rem .8rem}
+.zoom-cap{font-size:.85rem;opacity:.85;min-width:0}
+.zoom-close{flex:none;display:inline-flex;align-items:center;gap:.35rem;min-height:44px;padding:.4rem 1rem .4rem .7rem;border:0;border-radius:999px;background:var(--jaune);color:#10241A;font:700 1rem var(--display);text-transform:uppercase;letter-spacing:.05em;cursor:pointer}
+.zoom-close svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.zoom-close:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.zoom-scroll{flex:1;min-height:0;overflow:auto;display:flex;align-items:center;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.zoom-scroll img{display:block;margin:auto;max-width:none;background:#fff;border-radius:4px}
+.zoom-hint{text-align:center;font-size:.85rem;opacity:.8;padding:.4rem .8rem .8rem}
+.tdf-profil img{display:block;width:100%;height:auto}
+.tdf-profil figcaption{font-size:.78rem;color:var(--muted)}
 .tdf-play{display:grid;place-items:center;width:clamp(64px,11vw,96px);aspect-ratio:1;border-radius:50%;background:var(--jaune);color:#10241A;box-shadow:0 8px 28px rgba(0,0,0,.35);transition:transform .2s}
 .tdf-play svg{width:46%;height:46%;margin-left:8%;fill:currentColor}
 .tdf-txt{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;gap:.2rem;padding:1rem 1.2rem;background:linear-gradient(transparent,rgba(0,0,0,.45))}
@@ -814,6 +843,48 @@ img{max-width:100%}
         </a>
       </div>
       <p class="week-note">Vidéo officielle du Tour de France, aussi sur <a href="https://www.letour.fr/fr/video/11631/decouvrez-le-parcours-2027" target="_blank" rel="noopener">letour.fr</a>.</p>
+      <div class="sub-block">
+        <h3 class="h3">Les étapes près de chez nous</h3>
+        <div class="tdf-etapes">
+          <article class="tdf-etape">
+            <p class="tdf-when">Étape 15 · dimanche 18 juillet 2027</p>
+            <p class="tdf-route">Rodez <span aria-hidden="true">›</span><span class="sr-only">à</span> Albi</p>
+            <p class="tdf-facts"><span class="pill">Accidentée</span><span>169 km · 2 500 m D+</span></p>
+            <figure class="tdf-profil">
+              <button type="button" class="tdf-zoom" data-cap="Étape 15 · Rodez › Albi · © A.S.O. – Tour de France" aria-label="Agrandir le profil de l’étape 15"><img src="tour/etape-15-profil.webp" width="2000" height="989" alt="Profil de l’étape 15 : départ de Rodez (634 m), Naucelle (km 39), Rieupeyroux (km 66,5, 715 m), Villefranche-de-Rouergue (km 88,5), Laguépie (km 125), Blaye-les-Mines (km 148), arrivée à Albi (178 m) au km 168" loading="lazy" decoding="async"></button>
+              <figcaption>Profil de l’étape · © A.S.O. – Tour de France</figcaption>
+            </figure>
+            <a class="tdf-lien" href="https://www.letour.fr/fr/etape-15" target="_blank" rel="noopener">Profil et carte officiels sur letour.fr ↗</a>
+          </article>
+          <article class="tdf-etape">
+            <p class="tdf-when">Étape 16 · mardi 20 juillet 2027</p>
+            <p class="tdf-route">Toulouse <span aria-hidden="true">›</span><span class="sr-only">à</span> Toulouse</p>
+            <p class="tdf-facts"><span class="pill">Contre-la-montre individuel</span><span>33 km · 200 m D+</span></p>
+            <figure class="tdf-profil">
+              <button type="button" class="tdf-zoom" data-cap="Étape 16 · contre-la-montre de Toulouse · © A.S.O. – Tour de France" aria-label="Agrandir le profil de l’étape 16"><img src="tour/etape-16-profil.webp" width="2000" height="1528" alt="Profil de l’étape 16, contre-la-montre de 33 km : départ de Toulouse (140 m), Portet-sur-Garonne (km 6), Pinsaguel (km 11), Lacroix-Falgarde (km 15), côte de Pech David (km 24, 249 m, 800 m à 12,4 %), Toulouse-Empalot (km 26), arrivée à Toulouse (142 m)" loading="lazy" decoding="async"></button>
+              <figcaption>Profil de l’étape · © A.S.O. – Tour de France</figcaption>
+            </figure>
+            <a class="tdf-lien" href="https://www.letour.fr/fr/etape-16" target="_blank" rel="noopener">Profil et carte officiels sur letour.fr ↗</a>
+          </article>
+        </div>
+        <p class="week-note">Le Tour reste dans la région : journée de repos à Toulouse le lundi 19 juillet, et départ de Muret le mercredi 21 juillet pour l’étape 17 vers Pau. D’après le parcours officiel présenté le 22 octobre 2026 ; les cartes détaillées des étapes ne sont pas encore publiées sur letour.fr.</p>
+      </div>
+      <div class="sub-block">
+        <h3 class="h3">L’application officielle du Tour</h3>
+        <p class="week-note">Pour suivre la course en temps réel et toutes les étapes en direct, d’après letour.fr. Elle est éditée par A.S.O., l’organisateur du Tour de France.</p>
+        <div class="stores tdf-stores">
+          <a class="store" href="https://play.google.com/store/apps/details?id=com.aso.tdf2012int" target="_blank" rel="noopener">
+            <span class="store-logo android"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.4395 5.5586c-.675 1.1664-1.352 2.3318-2.0274 3.498-.0366-.0155-.0742-.0286-.1113-.043-1.8249-.6957-3.484-.8-4.42-.787-1.8551.0185-3.3544.4643-4.2597.8203-.084-.1494-1.7526-3.021-2.0215-3.4864a1.1451 1.1451 0 0 0-.1406-.1914c-.3312-.364-.9054-.4859-1.379-.203-.475.282-.7136.9361-.3886 1.5019 1.9466 3.3696-.0966-.2158 1.9473 3.3593.0172.031-.4946.2642-1.3926 1.0177C2.8987 12.176.452 14.772 0 18.9902h24c-.119-1.1108-.3686-2.099-.7461-3.0683-.7438-1.9118-1.8435-3.2928-2.7402-4.1836a12.1048 12.1048 0 0 0-2.1309-1.6875c.6594-1.122 1.312-2.2559 1.9649-3.3848.2077-.3615.1886-.7956-.0079-1.1191a1.1001 1.1001 0 0 0-.8515-.5332c-.5225-.0536-.9392.3128-1.0488.5449zm-.0391 8.461c.3944.5926.324 1.3306-.1563 1.6503-.4799.3197-1.188.0985-1.582-.4941-.3944-.5927-.324-1.3307.1563-1.6504.4727-.315 1.1812-.1086 1.582.4941zM7.207 13.5273c.4803.3197.5506 1.0577.1563 1.6504-.394.5926-1.1038.8138-1.584.4941-.48-.3197-.5503-1.0577-.1563-1.6504.4008-.6021 1.1087-.8106 1.584-.4941z"/></svg></span>
+            <span class="store-text"><small>Google Play</small><b>Télécharger sur Android</b></span>
+            <svg class="store-go" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>
+          </a>
+          <a class="store" href="https://apps.apple.com/app/id1528742741" target="_blank" rel="noopener">
+            <span class="store-logo apple"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg></span>
+            <span class="store-text"><small>App Store</small><b>Télécharger sur iPhone</b></span>
+            <svg class="store-go" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>
+          </a>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1099,6 +1170,13 @@ img{max-width:100%}
   <figure class="lb-fig"><img id="lb-img" alt=""><figcaption id="lb-cap"></figcaption></figure>
   <button class="lb-next" id="lb-next" type="button" aria-label="Photo suivante"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
   <p class="lb-count" id="lb-count"></p>
+</div>
+<div class="zoom" id="zoom" role="dialog" aria-modal="true" aria-label="Profil de l’étape agrandi" hidden>
+  <div class="zoom-bar">
+    <button class="zoom-close" type="button" id="zoom-close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Retour</button>
+    <p class="zoom-cap" id="zoom-cap"></p></div>
+  <div class="zoom-scroll" id="zoom-scroll"><img id="zoom-img" alt=""></div>
+  <p class="zoom-hint" id="zoom-hint" hidden>Faites glisser pour parcourir le profil, du départ à l’arrivée.</p>
 </div>
 <div class="sheet-scrim" id="sheet-scrim" hidden></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" hidden>
@@ -1947,6 +2025,44 @@ img{max-width:100%}
       document.addEventListener(n,function(){if(!(document.fullscreenElement||document.webkitFullscreenElement)&&enPlein())basculer();});
     });
     document.addEventListener("keydown",function(ev){if(ev.key==="Escape"&&enPlein())basculer();});
+  })();
+
+  /* ---------- Profils des étapes du Tour : agrandis en plein écran au toucher ---------- */
+  (function(){
+    var box=document.getElementById("zoom"),img=document.getElementById("zoom-img"),scroll=document.getElementById("zoom-scroll");
+    var hint=document.getElementById("zoom-hint"),ouvreur=null;
+    /* Écran large : le profil tient en entier ; téléphone tenu verticalement : toute la hauteur, on fait glisser */
+    function taille(){
+      if(box.hidden||!img.naturalWidth)return;
+      var r=img.naturalWidth/img.naturalHeight,vw=scroll.clientWidth,vh=scroll.clientHeight;
+      var h=Math.min(img.naturalHeight,vh-16),w=h*r;
+      if(vw>=vh||w<=vw-16){w=Math.min(img.naturalWidth,vw-16,(vh-16)*r);h=w/r;}
+      img.style.width=Math.round(w)+"px";img.style.height=Math.round(h)+"px";
+      hint.hidden=w<=vw;
+    }
+    /* Le bouton Retour du téléphone ferme le profil agrandi au lieu de quitter la page */
+    function fermer(parHistorique){
+      if(box.hidden)return;
+      if(!parHistorique&&history.state&&history.state.zoom){history.back();return;}
+      box.hidden=true;document.documentElement.classList.remove("locked");
+      if(ouvreur)ouvreur.focus();
+    }
+    window.addEventListener("popstate",function(){fermer(true);});
+    document.querySelectorAll(".tdf-zoom").forEach(function(b){
+      b.addEventListener("click",function(){
+        var src=b.querySelector("img");
+        ouvreur=b;img.alt=src.alt;document.getElementById("zoom-cap").textContent=b.dataset.cap;
+        box.hidden=false;document.documentElement.classList.add("locked");
+        history.pushState({zoom:true},"");
+        img.onload=function(){taille();scroll.scrollLeft=0;};
+        img.src=src.currentSrc||src.src;
+        if(img.complete)img.onload();
+        document.getElementById("zoom-close").focus();
+      });
+    });
+    document.getElementById("zoom-close").addEventListener("click",function(){fermer();});
+    document.addEventListener("keydown",function(ev){if(ev.key==="Escape")fermer();});
+    window.addEventListener("resize",taille);
   })();
 
   /* ---------- Données : affichage immédiat, puis relecture de data/sorties.json ---------- */
