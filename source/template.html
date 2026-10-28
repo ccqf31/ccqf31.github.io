@@ -1784,7 +1784,9 @@ html.locked{overflow:hidden}
     if(c>=95)return [c===95?"Orages":"Orages et grêle","storm"];
     return ["Nuageux","cloud"];
   }
-  var VENT=["du nord","de nord-est","d’est","de sud-est (autan)","du sud","de sud-ouest","d’ouest","de nord-ouest"];
+  /* Vent de sud-est : l'autan, quand il souffle vraiment */
+  var VENT=["du nord","de nord-est","d’est","de sud-est","du sud","de sud-ouest","d’ouest","de nord-ouest"];
+  function ventDe(deg,kmh){var i=Math.round(deg/45)%8;return VENT[i]+(i===3&&kmh>=20?" (autan)":"");}
   function dec1(x){return String(Math.round(x*10)/10).replace(".",",");}
   /* La prochaine sortie du mercredi et celle du dimanche, dans les 7 jours de prévisions */
   function weekRides(){
@@ -1817,7 +1819,7 @@ html.locked{overflow:hidden}
       '<div><p class="wx-when">'+cap(dateFr(e.date))+' · '+hm(e.date)+'</p><p class="wx-what">'+esc(rideTitle(e))+'</p></div>'+
       '<p class="wx-sky">'+sky[0]+'</p>'+
       '<dl class="wx-facts"><dt>Température</dt><dd>'+Math.round(temp[0])+'° au départ, '+Math.round(temp[temp.length-1])+'° au retour</dd>'+
-      '<dt>Vent</dt><dd>'+vent+'\u00a0km/h'+(dir.length?' '+VENT[Math.round(dir[Math.floor(dir.length/2)]/45)%8]:'')+
+      '<dt>Vent</dt><dd>'+vent+'\u00a0km/h'+(dir.length?' '+ventDe(dir[Math.floor(dir.length/2)],vent):'')+
         (rafale!==null?', rafales '+rafale+'\u00a0km/h':'')+'</dd>'+
       '<dt>Pluie</dt><dd>'+pluie+'</dd></dl>'+
       (alertes.length?'<div class="wx-alerts">'+alertes.map(function(a){return '<span class="pill">'+a+'</span>';}).join("")+'</div>':'')+
