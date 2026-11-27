@@ -17,8 +17,8 @@ import json
 import re
 from pathlib import Path
 
-VERSION = "1.6.0"
-DATE = "28 octobre 2026"     # date affichée avec la version, dans la section « Application mobile »
+VERSION = "1.7.0"
+DATE = "27 novembre 2026"     # date affichée avec la version, dans la section « Application mobile »
 
 RACINE = Path(__file__).resolve().parent.parent
 SOURCE = RACINE / "source"
