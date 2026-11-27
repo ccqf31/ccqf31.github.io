@@ -90,6 +90,39 @@ def jpeg_classique(chemin):
     return base64.b64encode(tampon.getvalue()).decode()
 
 
+JOURS_FR = ("lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche")
+MOIS_FR = ("janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre")
+
+
+def cyclosportives_html():
+    """Fiches de la section Cyclosportive, d'après source/cyclosportives.json, dans l'ordre des dates.
+    Pour ajouter une cyclosportive : ajouter une entrée au fichier, puis assembler le site.
+    « carte » d'un parcours : le lien d'intégration OpenRunner (embed.html?code=…) publié par l'organisateur."""
+    import datetime
+    e = html.escape
+    fiches = []
+    for c in sorted(json.loads((SOURCE / "cyclosportives.json").read_text(encoding="utf-8")), key=lambda c: c["date"]):
+        d = datetime.date.fromisoformat(c["date"])
+        quand = f"{JOURS_FR[d.weekday()]} {1 if d.day == 1 else d.day}{'er' if d.day == 1 else ''} {MOIS_FR[d.month - 1]} {d.year}"
+        lignes = "".join(
+            f'<li><b>{e(p["nom"])}</b><span class="cs-chiffres">{p["km"]} km · {p["dp"]:,} m D+</span>'.replace(f'{p["dp"]:,}', f'{p["dp"]:,}'.replace(",", "\u202f"))
+            + (f'<span class="cs-note">{e(p["note"])}</span>' if p.get("note") else "")
+            + (f'<button type="button" class="cs-apercu" data-carte="{e(p["carte"])}" data-cap="{e(c["nom"] if p["nom"] == c["nom"] else c["nom"] + " · " + p["nom"])} · {p["km"]} km">'
+               f'Aperçu du parcours</button>' if p.get("carte") else "") + "</li>"
+            for p in c["parcours"])
+        boutons = ((f'<a class="cs-btn primary" href="{e(c["inscription"])}" target="_blank" rel="noopener">S’inscrire ↗</a>'
+                    if c.get("inscription") else "")
+                   + f'<a class="cs-btn" href="{e(c["site"])}" target="_blank" rel="noopener">Site officiel ↗</a>')
+        fiches.append(
+            f'<article class="cs" data-date="{e(c["date"])}">'
+            f'<p class="cs-when">{e(quand.capitalize())} · {e(c["lieu"])}</p>'
+            f'<h3 class="cs-nom">{e(c["nom"])}</h3>'
+            + (f'<p class="cs-edition">{e(c["edition"])}</p>' if c.get("edition") else "")
+            + (f'<p class="cs-pres">{e(c["presentation"])}</p>' if c.get("presentation") else "")
+            + f'<ul class="cs-parcours">{lignes}</ul><div class="cs-btns">{boutons}</div></article>')
+    return "".join(fiches)
+
+
 def logo_svg(nom):
     chemin = re.search(r'<path d="[^"]+"/>', (ASSETS / f"{nom}.svg").read_text()).group(0)
     return f'<svg viewBox="0 0 24 24" aria-hidden="true">{chemin}</svg>'
@@ -177,6 +210,7 @@ def assembler(photos, differe=True):
                    .replace("__ICON__", b64(RACINE / "icons" / "icon-192.png"))
                    .replace("__DATA__", donnees_js)
                    .replace("__GALERIE__", galerie_html(photos, differe))
+                   .replace("__CYCLOSPORTIVES__", cyclosportives_html())
                    .replace("__PHOTOS__", json.dumps([{k: v for k, v in p.items() if k in ("w", "h", "l", "u")} for p in photos],
                                                      ensure_ascii=False).replace("<", "\\u003c"))
                    .replace("__VERSION__", VERSION).replace("__DATE__", DATE)
