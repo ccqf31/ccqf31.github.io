@@ -87,7 +87,7 @@ a{color:inherit}
 @media (max-width:1400px){.nav a{padding:.4rem .5rem;letter-spacing:.045em}}
 .menu-btn{display:none;align-items:center;gap:.5rem;min-height:44px;font:700 1rem var(--display);text-transform:uppercase;letter-spacing:.06em;color:var(--on-vert);background:transparent;border:1px solid var(--vert-line);border-radius:4px;padding:.45rem .9rem;cursor:pointer;flex:none}
 .menu-btn i{display:block;width:16px;height:2px;background:currentColor;box-shadow:0 5px 0 currentColor,0 -5px 0 currentColor}
-@media (max-width:1260px){
+@media (max-width:1290px){
   .menu-btn{display:inline-flex}
   .nav{display:none;position:absolute;left:0;right:0;top:100%;flex-direction:column;gap:0;background:var(--vert);border-bottom:1px solid var(--vert-line);padding-block:.25rem 1rem;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-height:calc(100dvh - 80px);overflow-y:auto;overscroll-behavior:contain}
   .top.open .nav{display:flex}
@@ -209,6 +209,22 @@ h2{font-size:var(--step3);font-weight:800;text-transform:uppercase;letter-spacin
 .tdf-route{font-family:var(--display);font-weight:800;font-size:1.7rem;text-transform:uppercase;line-height:1.05}
 .tdf-facts{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .7rem;font-family:var(--mono);font-size:.9rem;font-variant-numeric:tabular-nums}
 .tdf-lien{margin-top:auto;font-weight:600;color:var(--vert-text)}
+/* Cyclosportives : une fiche par épreuve (source/cyclosportives.json) */
+.cs-liste{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,26rem),1fr));gap:1rem}
+.cs{display:flex;flex-direction:column;gap:.55rem;padding:1.1rem 1.2rem;border:1px solid var(--line);border-top:4px solid var(--jaune);border-radius:8px;background:var(--surface);min-width:0}
+.cs-when{font-family:var(--mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--vert-text)}
+.cs-nom{font-family:var(--display);font-weight:800;font-size:2rem;text-transform:uppercase;line-height:1}
+.cs-edition{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+.cs-pres{color:var(--muted)}
+.cs-parcours{list-style:none;margin:.2rem 0 0;padding:0;display:flex;flex-direction:column}
+.cs-parcours li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.1rem 1rem;padding:.55rem 0;border-top:1px solid var(--line)}
+.cs-parcours b{font-weight:600}
+.cs-chiffres{font-family:var(--mono);font-size:.9rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cs-note{grid-column:1/-1;font-size:.85rem;color:var(--muted)}
+.cs-btns{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:auto;padding-top:.4rem}
+.cs-btn{display:inline-flex;align-items:center;min-height:44px;padding:.4rem 1rem;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font-weight:600;text-decoration:none}
+.cs-btn.primary{background:var(--vert);border-color:var(--vert);color:var(--on-vert)}
+@media (hover:hover){.cs-btn:hover{border-color:var(--muted)}.cs-btn.primary:hover{filter:brightness(1.08)}}
 .stores.tdf-stores{grid-template-columns:repeat(2,minmax(0,1fr));max-width:56rem}
 @media (max-width:720px){.stores.tdf-stores{grid-template-columns:minmax(0,1fr)}}
 a.store{text-decoration:none}
@@ -604,6 +620,7 @@ html.locked{overflow:hidden}
       <a href="#parcours">Parcours</a>
       <a href="#saison">Saison</a>
       <a href="#tour">Tour de France</a>
+      <a href="#cyclosportive">Cyclosportive</a>
       <a href="#photos">Photos</a>
       <a href="#adhesion">Adhésion</a>
       <a href="#maillot">Commande maillot club</a>
@@ -867,6 +884,21 @@ html.locked{overflow:hidden}
           </a>
         </div>
       </div>
+    </div>
+  </section>
+
+  <section class="section" id="cyclosportive">
+    <div class="wrap stack">
+      <div class="sec-head">
+        <div>
+          <p class="kicker">Cyclosportive</p>
+          <h2>Les cyclosportives</h2>
+          <p class="sec-sub">Les grandes cyclosportives de la région, avec leurs parcours et le lien vers leur site officiel pour s’inscrire.</p>
+        </div>
+      </div>
+      <div class="cs-liste" id="cs-liste">__CYCLOSPORTIVES__</div>
+      <p class="week-note" id="cs-vide" hidden>Les dates des prochaines éditions seront annoncées ici dès leur publication.</p>
+      <p class="week-note">Dates, parcours et inscriptions d’après le site officiel de chaque épreuve : vérifiez-les avant de vous inscrire.</p>
     </div>
   </section>
 
@@ -2046,6 +2078,13 @@ html.locked{overflow:hidden}
     document.addEventListener("keydown",function(ev){if(ev.key==="Escape")fermer();});
     window.addEventListener("resize",taille);
   })();
+
+  /* Cyclosportives : une épreuve passée n'est plus affichée (en attendant la date de l'édition suivante) */
+  document.querySelectorAll("#cs-liste .cs").forEach(function(c){
+    var d=parse(c.dataset.date);d.setDate(d.getDate()+1);
+    if(d<new Date())c.hidden=true;
+  });
+  document.getElementById("cs-vide").hidden=!!document.querySelector("#cs-liste .cs:not([hidden])");
 
   /* ---------- Données : affichage immédiat, puis relecture de data/sorties.json ---------- */
   var lastLoad=0;

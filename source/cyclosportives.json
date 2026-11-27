@@ -1,0 +1,17 @@
+[
+  {
+    "nom": "L’Ariégeoise",
+    "date": "2027-06-26",
+    "lieu": "Tarascon-sur-Ariège (Ariège)",
+    "edition": "31e édition",
+    "presentation": "La cyclosportive des Pyrénées, en boucle autour de Tarascon-sur-Ariège, avec une arrivée au cœur de la vieille ville.",
+    "parcours": [
+      {"nom": "L’Ariégeoise", "km": 152, "dp": 3300, "note": "cinq cols pyrénéens"},
+      {"nom": "La Mountagnole", "km": 107, "dp": 2300, "note": "trois grandes ascensions"},
+      {"nom": "La Rapaillou", "km": 90, "dp": 1600, "note": "par le col d’Uscla"},
+      {"nom": "La Passéjade, Elles font l’Ariégeoise", "km": 57, "dp": 700, "note": "randonnées non chronométrées"}
+    ],
+    "site": "https://www.cyclosport-ariegeoise.com",
+    "inscription": "https://in.njuko.com/ariegeoise-2027?currentPage=select-competition"
+  }
+]

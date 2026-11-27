@@ -62,3 +62,10 @@ jamais celles de la semaine suivante. Chaque sortie reste affichée jusqu'à son
 Les prévisions viennent d'[Open-Meteo](https://open-meteo.com/) (modèles de Météo-France et autres), demandées par le
 navigateur du visiteur à chaque ouverture de la page ; sans réponse, le bloc reste masqué. Pour que la sortie du jour
 reste dans la liste, `tools/maj_calendrier.py` garde les sorties parties depuis moins de 4 heures.
+
+## Cyclosportives
+
+La section « Cyclosportive » présente une fiche par épreuve, d'après `source/cyclosportives.json` : nom, date,
+lieu, édition, présentation, parcours (nom, km, dénivelé, remarque), site officiel et lien d'inscription.
+Pour ajouter une épreuve, ajouter une entrée à ce fichier puis assembler le site (`python3 source/build.py`).
+Les fiches sont rangées par date ; une épreuve passée n'est plus affichée à partir du lendemain.
