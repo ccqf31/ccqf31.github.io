@@ -6,10 +6,41 @@
     "edition": "31e édition",
     "presentation": "La cyclosportive des Pyrénées, en boucle autour de Tarascon-sur-Ariège, avec une arrivée au cœur de la vieille ville.",
     "parcours": [
-      {"nom": "L’Ariégeoise", "km": 152, "dp": 3300, "note": "cinq cols pyrénéens"},
-      {"nom": "La Mountagnole", "km": 107, "dp": 2300, "note": "trois grandes ascensions"},
-      {"nom": "La Rapaillou", "km": 90, "dp": 1600, "note": "par le col d’Uscla"},
-      {"nom": "La Passéjade, Elles font l’Ariégeoise", "km": 57, "dp": 700, "note": "randonnées non chronométrées"}
+      {
+        "nom": "L’Ariégeoise",
+        "km": 152,
+        "dp": 3300,
+        "note": "cinq cols pyrénéens",
+        "carte": "https://www.openrunner.com/embed.html?code=6a61466a2b6b596477667161364d42703963616647504e454947494a5662416e467946775a4b667a5149493d3a3a7fd15c582857355018d4e27c739ca8d1&lng=auto&unit=metric"
+      },
+      {
+        "nom": "La Mountagnole",
+        "km": 107,
+        "dp": 2300,
+        "note": "trois grandes ascensions",
+        "carte": "https://www.openrunner.com/embed.html?code=45772f786b755950306b70786f415141632f38376b486d33785147376c73555632614e6e4636595a3241343d3a3a1c4cfdc2e8205f59d25c48b1600d37a5&lng=auto&unit=metric"
+      },
+      {
+        "nom": "La Rapaillou",
+        "km": 90,
+        "dp": 1600,
+        "note": "par le col d’Uscla",
+        "carte": "https://www.openrunner.com/embed.html?code=39426265435a657130416a376c75554c57516b477853575833764b776845763668542b3056564166584c593d3a3af581d92cf3e3545d046c88312bfd9faa&lng=auto&unit=metric"
+      },
+      {
+        "nom": "La Passéjade",
+        "km": 57,
+        "dp": 700,
+        "note": "randonnée non chronométrée, aussi à vélo électrique (Passéjad’Elec)",
+        "carte": "https://www.openrunner.com/embed.html?code=456454724e4a4937476b6d2f45396433364158734c4d36534f31576f62746c31364550756b4e78744966413d3a3a068ed199a742f8ccb6def28a440e615b&lng=auto&unit=metric"
+      },
+      {
+        "nom": "Elles font l’Ariégeoise",
+        "km": 57,
+        "dp": 700,
+        "note": "randonnée non chronométrée au féminin",
+        "carte": "https://www.openrunner.com/embed.html?code=61743050486f5148467742495a7065436b55566b4c596f3148466f4f7153334a797a4630746776715831343d3a3a900a3c80b51974a261cd485893eb1e30&lng=auto&unit=metric"
+      }
     ],
     "site": "https://www.cyclosport-ariegeoise.com",
     "inscription": "https://in.njuko.com/ariegeoise-2027?currentPage=select-competition"

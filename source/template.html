@@ -221,6 +221,10 @@ h2{font-size:var(--step3);font-weight:800;text-transform:uppercase;letter-spacin
 .cs-parcours b{font-weight:600}
 .cs-chiffres{font-family:var(--mono);font-size:.9rem;font-variant-numeric:tabular-nums;white-space:nowrap}
 .cs-note{grid-column:1/-1;font-size:.85rem;color:var(--muted)}
+.cs-apercu{grid-column:1/-1;justify-self:start;display:inline-flex;align-items:center;gap:.4rem;min-height:40px;margin-top:.3rem;padding:.3rem .8rem;border:1px solid var(--line);border-radius:4px;background:var(--surface);color:var(--ink);font:600 .88rem var(--body);cursor:pointer}
+.cs-apercu::before{content:"";width:16px;height:16px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z'/%3E%3Cpath d='M9 4v14M15 6v14'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z'/%3E%3Cpath d='M9 4v14M15 6v14'/%3E%3C/svg%3E") center/contain no-repeat}
+@media (hover:hover){.cs-apercu:hover{border-color:var(--muted)}}
+.cs-apercu:focus-visible{outline:3px solid var(--jaune);outline-offset:2px}
 .cs-btns{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:auto;padding-top:.4rem}
 .cs-btn{display:inline-flex;align-items:center;min-height:44px;padding:.4rem 1rem;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font-weight:600;text-decoration:none}
 .cs-btn.primary{background:var(--vert);border-color:var(--vert);color:var(--on-vert)}
@@ -243,6 +247,9 @@ a.store{text-decoration:none}
 .zoom-scroll{flex:1;min-height:0;overflow:auto;display:flex;align-items:center;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .zoom-scroll img{display:block;margin:auto;max-width:none;background:#fff;border-radius:4px}
 .zoom-hint{text-align:center;font-size:.85rem;opacity:.8;padding:.4rem .8rem .8rem}
+/* Carte OpenRunner d'un parcours : elle occupe tout l'écran */
+.zoom.carte .zoom-scroll{display:block;overflow:hidden;padding:0 .5rem}
+.zoom-carte{display:block;width:100%;height:100%;border:0;border-radius:6px;background:#fff}
 .tdf-profil img{display:block;width:100%;height:auto}
 .tdf-profil figcaption{font-size:.78rem;color:var(--muted)}
 .tdf-play{display:grid;place-items:center;width:clamp(64px,11vw,96px);aspect-ratio:1;border-radius:50%;background:var(--jaune);color:#10241A;box-shadow:0 8px 28px rgba(0,0,0,.35);transition:transform .2s}
@@ -1185,12 +1192,13 @@ html.locked{overflow:hidden}
   <button class="lb-next" id="lb-next" type="button" aria-label="Photo suivante"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
   <p class="lb-count" id="lb-count"></p>
 </div>
-<div class="zoom" id="zoom" role="dialog" aria-modal="true" aria-label="Profil de l’étape agrandi" hidden>
+<div class="zoom" id="zoom" role="dialog" aria-modal="true" aria-label="Agrandissement" hidden>
   <div class="zoom-bar">
     <button class="zoom-close" type="button" id="zoom-close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Retour</button>
     <p class="zoom-cap" id="zoom-cap"></p></div>
   <div class="zoom-scroll" id="zoom-scroll"><img id="zoom-img" alt=""></div>
   <p class="zoom-hint" id="zoom-hint" hidden>Faites glisser pour parcourir le profil, du départ à l’arrivée.</p>
+  <p class="zoom-hint" id="zoom-credit" hidden>Carte et profil de dénivelé OpenRunner, publiés par l’organisateur.</p>
 </div>
 <div class="sheet-scrim" id="sheet-scrim" hidden></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" hidden>
@@ -2041,13 +2049,13 @@ html.locked{overflow:hidden}
     document.addEventListener("keydown",function(ev){if(ev.key==="Escape"&&enPlein())basculer();});
   })();
 
-  /* ---------- Profils des étapes du Tour : agrandis en plein écran au toucher ---------- */
+  /* ---------- Plein écran au toucher : profils des étapes du Tour, cartes OpenRunner des cyclosportives ---------- */
   (function(){
     var box=document.getElementById("zoom"),img=document.getElementById("zoom-img"),scroll=document.getElementById("zoom-scroll");
-    var hint=document.getElementById("zoom-hint"),ouvreur=null;
+    var hint=document.getElementById("zoom-hint"),credit=document.getElementById("zoom-credit"),ouvreur=null,carte=null;
     /* Écran large : le profil tient en entier ; téléphone tenu verticalement : toute la hauteur, on fait glisser */
     function taille(){
-      if(box.hidden||!img.naturalWidth)return;
+      if(box.hidden||carte||!img.naturalWidth)return;
       var r=img.naturalWidth/img.naturalHeight,vw=scroll.clientWidth,vh=scroll.clientHeight;
       var h=Math.min(img.naturalHeight,vh-16),w=h*r;
       if(vw>=vh||w<=vw-16){w=Math.min(img.naturalWidth,vw-16,(vh-16)*r);h=w/r;}
@@ -2059,19 +2067,36 @@ html.locked{overflow:hidden}
       if(box.hidden)return;
       if(!parHistorique&&history.state&&history.state.zoom){history.back();return;}
       box.hidden=true;document.documentElement.classList.remove("locked");
+      if(carte){carte.remove();carte=null;}
       if(ouvreur)ouvreur.focus();
     }
+    function ouvrir(b){
+      ouvreur=b;document.getElementById("zoom-cap").textContent=b.dataset.cap;
+      box.hidden=false;document.documentElement.classList.add("locked");
+      history.pushState({zoom:true},"");
+      document.getElementById("zoom-close").focus();
+    }
     window.addEventListener("popstate",function(){fermer(true);});
+    /* Carte OpenRunner d'un parcours (lien d'intégration de l'organisateur), chargée seulement au toucher */
+    document.querySelectorAll(".cs-apercu").forEach(function(b){
+      b.addEventListener("click",function(){
+        box.classList.add("carte");img.hidden=true;hint.hidden=true;credit.hidden=false;
+        carte=document.createElement("iframe");
+        carte.className="zoom-carte";carte.src=b.dataset.carte;
+        carte.title="Carte et profil du parcours "+b.dataset.cap;
+        carte.setAttribute("allow","fullscreen");
+        scroll.appendChild(carte);
+        ouvrir(b);
+      });
+    });
     document.querySelectorAll(".tdf-zoom").forEach(function(b){
       b.addEventListener("click",function(){
         var src=b.querySelector("img");
-        ouvreur=b;img.alt=src.alt;document.getElementById("zoom-cap").textContent=b.dataset.cap;
-        box.hidden=false;document.documentElement.classList.add("locked");
-        history.pushState({zoom:true},"");
+        box.classList.remove("carte");img.hidden=false;credit.hidden=true;
+        img.alt=src.alt;ouvrir(b);
         img.onload=function(){taille();scroll.scrollLeft=0;};
         img.src=src.currentSrc||src.src;
         if(img.complete)img.onload();
-        document.getElementById("zoom-close").focus();
       });
     });
     document.getElementById("zoom-close").addEventListener("click",function(){fermer();});

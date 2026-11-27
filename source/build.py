@@ -96,7 +96,8 @@ MOIS_FR = ("janvier", "février", "mars", "avril", "mai", "juin", "juillet", "ao
 
 def cyclosportives_html():
     """Fiches de la section Cyclosportive, d'après source/cyclosportives.json, dans l'ordre des dates.
-    Pour ajouter une cyclosportive : ajouter une entrée au fichier, puis assembler le site."""
+    Pour ajouter une cyclosportive : ajouter une entrée au fichier, puis assembler le site.
+    « carte » d'un parcours : le lien d'intégration OpenRunner (embed.html?code=…) publié par l'organisateur."""
     import datetime
     e = html.escape
     fiches = []
@@ -105,7 +106,9 @@ def cyclosportives_html():
         quand = f"{JOURS_FR[d.weekday()]} {1 if d.day == 1 else d.day}{'er' if d.day == 1 else ''} {MOIS_FR[d.month - 1]} {d.year}"
         lignes = "".join(
             f'<li><b>{e(p["nom"])}</b><span class="cs-chiffres">{p["km"]} km · {p["dp"]:,} m D+</span>'.replace(f'{p["dp"]:,}', f'{p["dp"]:,}'.replace(",", "\u202f"))
-            + (f'<span class="cs-note">{e(p["note"])}</span>' if p.get("note") else "") + "</li>"
+            + (f'<span class="cs-note">{e(p["note"])}</span>' if p.get("note") else "")
+            + (f'<button type="button" class="cs-apercu" data-carte="{e(p["carte"])}" data-cap="{e(c["nom"] if p["nom"] == c["nom"] else c["nom"] + " · " + p["nom"])} · {p["km"]} km">'
+               f'Aperçu du parcours</button>' if p.get("carte") else "") + "</li>"
             for p in c["parcours"])
         boutons = ((f'<a class="cs-btn primary" href="{e(c["inscription"])}" target="_blank" rel="noopener">S’inscrire ↗</a>'
                     if c.get("inscription") else "")
