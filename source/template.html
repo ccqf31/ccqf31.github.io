@@ -91,7 +91,7 @@ a{color:inherit}
   .menu-btn{display:inline-flex}
   .nav{display:none;position:absolute;left:0;right:0;top:100%;flex-direction:column;gap:0;background:var(--vert);border-bottom:1px solid var(--vert-line);padding-block:.25rem 1rem;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-height:calc(100dvh - 80px);overflow-y:auto;overscroll-behavior:contain}
   .top.open .nav{display:flex}
-  .nav a{display:flex;align-items:center;min-height:52px;padding:0 .25rem;font-size:1.3rem;border-bottom:1px solid var(--vert-line);border-radius:0}
+  .nav a{display:flex;align-items:center;min-height:47px;padding:0 .25rem;font-size:1.2rem;border-bottom:1px solid var(--vert-line);border-radius:0}
 }
 .scrim{position:fixed;inset:0;z-index:19;background:var(--shadow)}
 
@@ -596,6 +596,8 @@ html.locked{overflow:hidden}
 .tabbar{display:none}
 @media (max-width:880px){
   .tabbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -10px 24px -18px var(--shadow);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
+  /* Menu ouvert : la barre du bas s'efface pour ne pas cacher la fin de la liste */
+  html.menu-ouvert .tabbar{display:none}
   .tabbar a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:58px;text-decoration:none;color:var(--muted);font-size:.72rem;font-weight:600}
   .tabbar svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   .tabbar a[aria-current="true"]{color:var(--vert-text)}
@@ -1686,6 +1688,7 @@ html.locked{overflow:hidden}
   var header=document.getElementById("top"),btn=document.getElementById("menu-btn"),scrim=document.getElementById("scrim");
   function setMenu(open,backToButton){
     header.classList.toggle("open",open);
+    document.documentElement.classList.toggle("menu-ouvert",open);
     btn.setAttribute("aria-expanded",open?"true":"false");
     scrim.hidden=!open;
     if(open){var first=document.querySelector("#nav a");if(first)first.focus({preventScroll:true});}
